@@ -66,7 +66,8 @@ if img_file_buffer is not None:
     # Adjustable Parameters
     conf_threshold = st.slider("Confidence Threshold", min_value=0.0, max_value=1.0, step=0.01, value=0.5)
     box_color_hex = st.color_picker("Bounding Box Color", "#00FF00")
-    thickness = st.slider("Bounding Box Thickness", 1, 10, 5)
+    # Change default thickness value to 8 here
+    thickness = st.slider("Bounding Box Thickness", 1, 10, 8)
     # Convert hex to BGR tuple.
     box_color = tuple(int(box_color_hex[i:i+2], 16) for i in (1, 3, 5))
     box_color = (box_color[2], box_color[1], box_color[0])
@@ -118,7 +119,8 @@ if video_file_buffer is not None:
     box_color_video_hex = st.color_picker("Bounding Box Color for Video", "#00FF00")
     box_color_video = tuple(int(box_color_video_hex[i:i+2], 16) for i in (1, 3, 5))
     box_color_video = (box_color_video[2], box_color_video[1], box_color_video[0])
-    thickness_video = st.slider("Bounding Box Thickness for Video", 1, 10, 5)
+    # Change default thickness value to 8 here as well
+    thickness_video = st.slider("Bounding Box Thickness for Video", 1, 10, 8)
     
     # Video rotation buttons.
     if 'rotation_angle_video' not in st.session_state:
