@@ -23,6 +23,10 @@ st.markdown(
         background-size: cover;
         background-position: center;
     }
+    /* Set the sidebar background to 90% opaque */
+    [data-testid="stSidebar"] {
+        background-color: rgba(255, 255, 255, 0.9);
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -113,6 +117,9 @@ elif rotation_choice_img == "Rotate 90° CCW":
     rotation_angle_image = cv2.ROTATE_90_COUNTERCLOCKWISE
 elif rotation_choice_img == "Rotate 180":
     rotation_angle_image = cv2.ROTATE_180
+
+# Divider between Image and Video Options.
+st.sidebar.markdown("---")
 
 st.sidebar.header("Video Processing Options")
 conf_threshold_video = st.sidebar.slider("Confidence Threshold (Video)", 0.0, 1.0, 0.5, 0.01)
