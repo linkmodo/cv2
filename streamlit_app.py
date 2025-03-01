@@ -7,7 +7,7 @@ import tempfile
 import os
 
 # Import for webcam streaming
-from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
+from streamlit_webrtc import webrtc_streamer, VideoTransformerBase, RTCConfiguration, WebRtcMode
 
 # Set page configuration to wide and restrict container width to 900px.
 st.set_page_config(page_title="Deep Learning Face Detection", layout="wide")
@@ -245,36 +245,76 @@ if video_file_buffer is not None:
 # ---------------------
 st.markdown("## Webcam Face Detection")
 
-# Create a VideoTransformer for webcam stream processing.
-class FaceDetectionVideoTransformer(VideoTransformerBase):
-    def __init__(self):
-        self.net = load_model()
+try:
+    # Create a VideoTransformer for webcam stream processing.
+    class FaceDetectionVideoTransformer(VideoTransformerBase):
+        def __init__(self):
+            self.net = load_model()
+            self.confidence_threshold = 0.5
 
-    def transform(self, frame):
-        try:
-            # Convert frame to a BGR image.
-            img = frame.to_ndarray(format="bgr24")
-            # Resize to max resolution 320x240.
-            img = cv2.resize(img, (320, 240))
-            # Run face detection.
-            detections = detectFaceOpenCVDnn(self.net, img)
-            # Draw bounding boxes.
-            img = process_detections(img, detections, conf_threshold=0.5, box_color=(0, 255, 0), thickness=2)
-        except Exception as e:
-            # Print the error to the console for debugging.
-            print("Error in transform:", e)
-        return img
+        def transform(self, frame):
+            try:
+                # Convert frame to a BGR image.
+                img = frame.to_ndarray(format="bgr24")
+                # Run face detection.
+                detections = detectFaceOpenCVDnn(self.net, img)
+                # Draw bounding boxes.
+                img = process_detections(
+                    img, 
+                    detections, 
+                    conf_threshold=self.confidence_threshold,
+                    box_color=(0, 255, 0),
+                    thickness=2
+                )
+                return img
+            except Exception as e:
+                st.error(f"Error processing frame: {str(e)}")
+                return img
 
+    # Configure STUN servers
+    rtc_configuration = RTCConfiguration(
+        {"iceServers": [
+            {"urls": ["stun:stun.l.google.com:19302"]},
+            {"urls": ["stun:stun1.l.google.com:19302"]},
+        ]}
+    )
 
-# Start the webcam streamer with resolution constraints.
-webrtc_streamer(
-    key="face-detection-webcam",
-    video_transformer_factory=FaceDetectionVideoTransformer,
-    media_stream_constraints={
-        "video": True,  # Remove the resolution constraints for testing.
-        "audio": False,
-    }
-)
+    # Add webcam controls
+    st.sidebar.markdown("### Webcam Settings")
+    confidence = st.sidebar.slider(
+        "Detection Confidence",
+        min_value=0.0,
+        max_value=1.0,
+        value=0.5,
+        step=0.1
+    )
+
+    # Start the webcam streamer
+    ctx = webrtc_streamer(
+        key="face-detection-webcam",
+        mode=WebRtcMode.SENDRECV,
+        rtc_configuration=rtc_configuration,
+        video_transformer_factory=FaceDetectionVideoTransformer,
+        media_stream_constraints={
+            "video": {"frameRate": {"ideal": 30}},
+            "audio": False,
+        },
+        async_processing=True,
+    )
+
+    # Update confidence threshold when streaming is active
+    if ctx.video_transformer:
+        ctx.video_transformer.confidence_threshold = confidence
+
+except Exception as e:
+    st.error(f"""
+    Error initializing webcam: {str(e)}
+    
+    Please make sure you have:
+    1. Allowed camera access in your browser
+    2. Have a working webcam connected
+    3. No other application is using the webcam
+    """)
 
 # Footer
 st.markdown("""
