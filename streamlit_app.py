@@ -6,6 +6,23 @@ from io import BytesIO
 import tempfile
 import os
 
+# Set page configuration to wide and then override the container width to 900px.
+st.set_page_config(page_title="Deep Learning Face Detection", layout="wide")
+
+# Custom CSS to restrict the width of the main container to 900px.
+st.markdown(
+    """
+    <style>
+    .block-container {
+        max-width: 900px;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 st.title("Deep Learning based Face Detection Using OpenCV")
 st.write("Detect faces in images and videos using OpenCV's deep learning model. Upload an image or video to start.")
 
