@@ -25,7 +25,7 @@ st.markdown(
     }
     /* Set the sidebar background to 90% opaque */
     [data-testid="stSidebar"] {
-        background-color: rgba(255, 255, 255, 0.9);
+        background-color: rgba(255, 255, 255, 0.2);
     }
     </style>
     """,
