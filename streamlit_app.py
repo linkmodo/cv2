@@ -20,7 +20,7 @@ def detectFaceOpenCVDnn(net, frame):
     return detections
 
 # Function for drawing bounding boxes on the frame.
-def process_detections(frame, detections, conf_threshold=0.5, box_color=(0, 255, 0), thickness=5):
+def process_detections(frame, detections, conf_threshold=0.5, box_color=(0, 255, 0), thickness=4):
     frame_h, frame_w = frame.shape[:2]
     for i in range(detections.shape[2]):
         confidence = detections[0, 0, i, 2]
@@ -66,7 +66,7 @@ if img_file_buffer is not None:
     # Adjustable Parameters
     conf_threshold = st.slider("Confidence Threshold", min_value=0.0, max_value=1.0, step=0.01, value=0.5)
     box_color_hex = st.color_picker("Bounding Box Color", "#00FF00")
-    thickness = st.slider("Bounding Box Thickness", 1, 10, 2)
+    thickness = st.slider("Bounding Box Thickness", 1, 10, 5)
     # Convert hex to BGR tuple.
     box_color = tuple(int(box_color_hex[i:i+2], 16) for i in (1, 3, 5))
     box_color = (box_color[2], box_color[1], box_color[0])
@@ -118,7 +118,7 @@ if video_file_buffer is not None:
     box_color_video_hex = st.color_picker("Bounding Box Color for Video", "#00FF00")
     box_color_video = tuple(int(box_color_video_hex[i:i+2], 16) for i in (1, 3, 5))
     box_color_video = (box_color_video[2], box_color_video[1], box_color_video[0])
-    thickness_video = st.slider("Bounding Box Thickness for Video", 1, 10, 2)
+    thickness_video = st.slider("Bounding Box Thickness for Video", 1, 10, 5)
     
     # Video rotation buttons.
     if 'rotation_angle_video' not in st.session_state:
