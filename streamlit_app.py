@@ -24,6 +24,19 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background-image: url("https://raw.githubusercontent.com/linkmodo/cv2/main/theatre-4981936.jpg");
+        background-size: cover;
+        background-position: center;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # Title and subtitle
 st.markdown("""
 <h1 style="
