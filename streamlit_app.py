@@ -6,9 +6,6 @@ from io import BytesIO
 import tempfile
 import os
 
-# Import for webcam streaming using streamlit-webrtc
-from streamlit_webrtc import webrtc_streamer, VideoTransformerBase, RTCConfiguration
-
 # ---------------------
 # Page Configuration & Styling
 # ---------------------
