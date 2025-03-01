@@ -34,7 +34,17 @@ st.markdown("""
 Deep Learning Based Face Detection
 </h1>
 """, unsafe_allow_html=True)
-st.write("Detect faces in images and videos using OpenCV's deep learning model. Upload an image or video to start.")
+
+st.markdown("""
+<h2 style="
+    text-align: center;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: black; /* fallback color */
+">
+This application detect faces in images and videos using OpenCV's deep learning model. Upload an image or video to start.
+</h2>
+""", unsafe_allow_html=True)
 
 img_file_buffer = st.file_uploader("Choose an image file with face(s) in it to be analyzed", type=['jpg', 'jpeg', 'png'])
 video_file_buffer = st.file_uploader("Choose a video file with face(s) in it to be analyzed", type=['mp4', 'avi', 'mov'])
