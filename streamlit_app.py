@@ -79,7 +79,10 @@ if img_file_buffer is not None:
     placeholders[1].text("Output Image")
     
     out_image = Image.fromarray(out_image[:, :, ::-1])
-    st.download_button("Download Processed Image", data=BytesIO(), file_name="processed_image.jpg", mime="image/jpeg")
+    # Save the processed image to BytesIO
+    buf = BytesIO()
+    out_image.save(buf, format='JPEG')
+    st.download_button("Download Processed Image", data=buf.getvalue(), file_name="processed_image.jpg", mime="image/jpeg")
 
 # Video Processing
 if video_file_buffer is not None:
@@ -95,6 +98,9 @@ if video_file_buffer is not None:
     
     conf_threshold = st.slider("Confidence Threshold for Video", 0.0, 1.0, 0.5, 0.01)
     box_color = st.color_picker("Bounding Box Color for Video", "#00FF00")
+    # Convert hex color to BGR
+    box_color = tuple(int(box_color[i:i+2], 16) for i in (1, 3, 5))
+    box_color = (box_color[2], box_color[1], box_color[0])
     thickness = st.slider("Bounding Box Thickness for Video", 1, 10, 2)
     rotation_angle = st.selectbox("Rotate Video Frames", [0, cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_90_COUNTERCLOCKWISE, cv2.ROTATE_180], format_func=lambda x: "None" if x == 0 else "90° CW" if x == cv2.ROTATE_90_CLOCKWISE else "90° CCW" if x == cv2.ROTATE_90_COUNTERCLOCKWISE else "180°")
     
