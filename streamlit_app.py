@@ -237,88 +237,55 @@ Live Webcam Face Detection
 </h3>
 """, unsafe_allow_html=True)
 
-try:
-    from streamlit_webrtc import webrtc_streamer, VideoTransformerBase, RTCConfiguration
-    import av
-    
-    # Define RTC configuration with public STUN servers
-    rtc_configuration = RTCConfiguration(
-        {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
-    )
-    
-    # Define a video transformer for live face detection
-    class FaceDetectionTransformer(VideoTransformerBase):
-        def __init__(self):
-            self.net = None
-            self.conf_threshold = 0.5
-            self.box_color = (0, 255, 0)
-            self.thickness = 4
-        
-        def transform(self, frame):
-            try:
-                # Initialize model if not already done
-                if self.net is None:
-                    self.net = load_model()
-                
-                # Convert the frame
-                img = frame.to_ndarray(format="bgr24")
-                
-                # Run face detection
-                detections = detectFaceOpenCVDnn(self.net, img)
-                
-                # Process and annotate the frame
-                processed_frame = process_detections(
-                    img.copy(),  # Create a copy to avoid modifying the original
-                    detections,
-                    self.conf_threshold,
-                    self.box_color,
-                    self.thickness
-                )
-                
-                return processed_frame
-            except Exception as e:
-                st.error(f"Error in transform: {str(e)}")
-                return img
-    
-    # Add controls for webcam face detection
-    st.sidebar.markdown("## Webcam Settings")
-    conf_threshold_webcam = st.sidebar.slider(
-        "Confidence Threshold (Webcam)",
-        min_value=0.0,
-        max_value=1.0,
-        value=0.5,
-        step=0.01
-    )
-    
-    # Start the webcam stream with live face detection
-    ctx = webrtc_streamer(
-        key="live",
-        video_transformer_factory=FaceDetectionTransformer,
-        rtc_configuration=rtc_configuration,
-        media_stream_constraints={
-            "video": {
-                "width": {"ideal": 640},
-                "height": {"ideal": 480},
-                "frameRate": {"ideal": 30}
-            },
-            "audio": False,
-        }
-    )
-    
-    # Update parameters when streaming is active
-    if ctx.video_transformer:
-        ctx.video_transformer.conf_threshold = conf_threshold_webcam
-
-except ImportError as e:
-    st.error("""
-    Error: Missing required packages for webcam support.
-    Please install them using:
-    ```
-    pip install streamlit-webrtc opencv-python av
-    ```
-    """)
-except Exception as e:
-    st.error(f"An error occurred with the webcam: {str(e)}")
+if st.button("Start Webcam"):
+    try:
+        cap = cv2.VideoCapture(0)
+        if not cap.isOpened():
+            st.error("Unable to access webcam. Please check your camera permissions.")
+        else:
+            # Add webcam settings
+            conf_threshold_webcam = st.slider(
+                "Confidence Threshold (Webcam)",
+                min_value=0.0,
+                max_value=1.0,
+                value=0.5,
+                step=0.01
+            )
+            
+            box_color_webcam = (0, 255, 0)  # Default green
+            thickness_webcam = 4
+            
+            stframe = st.empty()
+            stop_button = st.button("Stop Webcam")
+            
+            while not stop_button:
+                ret, frame = cap.read()
+                if ret:
+                    # Run face detection
+                    detections = detectFaceOpenCVDnn(net, frame)
+                    
+                    # Process and annotate the frame
+                    processed_frame = process_detections(
+                        frame.copy(),
+                        detections,
+                        conf_threshold_webcam,
+                        box_color_webcam,
+                        thickness_webcam
+                    )
+                    
+                    # Display the frame
+                    stframe.image(processed_frame, channels="BGR")
+                else:
+                    st.error("Error reading from webcam")
+                    break
+            
+            cap.release()
+            stframe.empty()
+            
+    except Exception as e:
+        st.error(f"An error occurred with the webcam: {str(e)}")
+        if 'cap' in locals():
+            cap.release()
 
 # Footer
 st.markdown("""
