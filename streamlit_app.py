@@ -29,6 +29,7 @@ st.markdown("""
     background: -webkit-linear-gradient(45deg, orange, yellow);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    color: black; /* fallback color */
 ">
 Deep Learning based Face Detection Using OpenCV
 </h1>
