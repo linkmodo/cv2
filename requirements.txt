@@ -3,5 +3,6 @@ opencv-python-headless
 numpy
 Pillow
 streamlit-webrtc
+typing-extensions==4.5.0
 av
 aiortc
