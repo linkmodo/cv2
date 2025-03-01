@@ -40,7 +40,7 @@ st.markdown("""
     color: white;
     font-size: 20px;
 ">
-This application detects face(s) in images, videos, and via your live webcam using OpenCV's deep learning model.<br>
+This application detects face(s) in images or videos using OpenCV's deep learning model.<br>
 Start by uploading an image or video file, or use your webcam below.
 </h3>
 """, unsafe_allow_html=True)
