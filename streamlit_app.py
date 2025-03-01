@@ -269,37 +269,60 @@ try:
     run = st.checkbox('Start Webcam')
 
     # Initialize or release camera based on checkbox state
-    if run and st.session_state.camera is None:
-        st.session_state.camera = cv2.VideoCapture(0)
+    if run:
+        if st.session_state.camera is None:
+            # Try different camera indices
+            for camera_idx in [0, 1]:
+                cap = cv2.VideoCapture(camera_idx, cv2.CAP_DSHOW)  # Try DirectShow
+                if cap.isOpened():
+                    st.session_state.camera = cap
+                    break
+                cap.release()
+            
+            if st.session_state.camera is None:
+                st.error("Could not initialize webcam. Please check if your camera is connected and not in use by another application.")
+                run = False
     elif not run and st.session_state.camera is not None:
         st.session_state.camera.release()
         st.session_state.camera = None
 
     # Main webcam loop
-    if run:
-        while st.session_state.camera is not None:
-            ret, frame = st.session_state.camera.read()
-            if not ret:
-                st.error("Failed to capture frame from webcam")
-                break
+    if run and st.session_state.camera is not None:
+        try:
+            # Check if camera is still accessible
+            if not st.session_state.camera.isOpened():
+                st.error("Camera connection lost")
+                st.session_state.camera.release()
+                st.session_state.camera = None
+            else:
+                ret, frame = st.session_state.camera.read()
+                if ret:
+                    # Run face detection
+                    detections = detectFaceOpenCVDnn(net, frame)
+                    
+                    # Draw bounding boxes
+                    frame = process_detections(
+                        frame,
+                        detections,
+                        conf_threshold=confidence_threshold,
+                        box_color=(0, 255, 0),
+                        thickness=2
+                    )
 
-            # Run face detection
-            detections = detectFaceOpenCVDnn(net, frame)
-            
-            # Draw bounding boxes
-            frame = process_detections(
-                frame,
-                detections,
-                conf_threshold=confidence_threshold,
-                box_color=(0, 255, 0),
-                thickness=2
-            )
-
-            # Convert BGR to RGB for display
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            
-            # Display the frame
-            FRAME_WINDOW.image(frame)
+                    # Convert BGR to RGB for display
+                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    
+                    # Display the frame
+                    FRAME_WINDOW.image(frame)
+                else:
+                    st.error("Failed to capture frame from webcam. Please check your camera connection.")
+                    st.session_state.camera.release()
+                    st.session_state.camera = None
+        except Exception as e:
+            st.error(f"Error during webcam capture: {str(e)}")
+            if st.session_state.camera is not None:
+                st.session_state.camera.release()
+                st.session_state.camera = None
     else:
         st.write('Webcam Stopped')
         if st.session_state.camera is not None:
@@ -314,6 +337,7 @@ except Exception as e:
     1. Allowed camera access in your browser
     2. Have a working webcam connected
     3. No other application is using the webcam
+    4. Try restarting your browser or computer if the issue persists
     """)
     if st.session_state.camera is not None:
         st.session_state.camera.release()
