@@ -255,7 +255,11 @@ class FaceDetectionTransformer(VideoTransformerBase):
         return processed_frame
 
 # Start the webcam stream with live face detection.
-webrtc_streamer(key="live", video_transformer_factory=FaceDetectionTransformer)
+webrtc_streamer(
+    key="live",
+    video_transformer_factory=FaceDetectionTransformer,
+    media_stream_constraints={"video": {"width": {"exact": 640}, "height": {"exact": 480}}}
+)
 
 # Footer
 st.markdown("""
