@@ -6,6 +6,9 @@ from io import BytesIO
 import tempfile
 import os
 
+# Import for webcam streaming
+from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
+
 # Set page configuration to wide and restrict container width to 900px.
 st.set_page_config(page_title="Deep Learning Face Detection", layout="wide")
 st.markdown(
@@ -40,14 +43,14 @@ st.markdown("""
     color: white;
     font-size: 20px;
 ">
-This application detects face(s) in images or videos using OpenCV's deep learning model.<br>
-**No data is saved after exiting this page**
+This application detects face(s) in images, videos, or webcam streams using OpenCV's deep learning model.<br>
+<strong>No data is saved after exiting this page</strong>
 </h3>
 """, unsafe_allow_html=True)
 
 # File uploaders for image and video.
 img_file_buffer = st.file_uploader("Upload an image file with face(s) in it to be analyzed", type=['jpg', 'jpeg', 'png'])
-video_file_buffer = st.file_uploader("upload a video file with face(s) in it to be analyzed", type=['mp4', 'avi', 'mov'])
+video_file_buffer = st.file_uploader("Upload a video file with face(s) in it to be analyzed", type=['mp4', 'avi', 'mov'])
 
 # Function for detecting faces using OpenCV's DNN.
 def detectFaceOpenCVDnn(net, frame):
@@ -223,6 +226,38 @@ if video_file_buffer is not None:
         os.unlink(output_path)
     except Exception as e:
         st.error(f"Error deleting temporary file: {e}")
+
+# ---------------------
+# Webcam Streaming Processing
+# ---------------------
+st.markdown("## Webcam Face Detection")
+
+# Create a VideoTransformer for webcam stream processing.
+class FaceDetectionVideoTransformer(VideoTransformerBase):
+    def __init__(self):
+        # Load the DNN model once when the transformer is initialized.
+        self.net = load_model()
+
+    def transform(self, frame):
+        # Convert frame to a BGR image.
+        img = frame.to_ndarray(format="bgr24")
+        # Resize to max resolution 320x240 to reduce bandwidth.
+        img = cv2.resize(img, (320, 240))
+        # Run face detection.
+        detections = detectFaceOpenCVDnn(self.net, img)
+        # Draw bounding boxes (using fixed parameters, adjust if needed).
+        img = process_detections(img, detections, conf_threshold=0.5, box_color=(0, 255, 0), thickness=2)
+        return img
+
+# Start the webcam streamer with resolution constraints.
+webrtc_streamer(
+    key="face-detection-webcam",
+    video_transformer_factory=FaceDetectionVideoTransformer,
+    media_stream_constraints={
+        "video": {"width": {"max": 320}, "height": {"max": 240}, "frameRate": {"max": 30}},
+        "audio": False,
+    }
+)
 
 # Footer
 st.markdown("""
