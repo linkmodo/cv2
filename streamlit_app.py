@@ -6,10 +6,8 @@ from io import BytesIO
 import tempfile
 import os
 
-# Set page configuration to wide and then override the container width to 900px.
+# Set page configuration to wide and restrict container width to 900px.
 st.set_page_config(page_title="Deep Learning Face Detection", layout="wide")
-
-# Custom CSS to restrict the width of the main container to 900px.
 st.markdown(
     """
     <style>
@@ -23,6 +21,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# Title and subtitle
 st.markdown("""
 <h1 style="
     text-align: center;
@@ -41,11 +40,12 @@ st.markdown("""
     color: white;
     font-size: 20px;
 ">
-This application detects faces in images and videos using OpenCV's deep learning model.<br>Start by uploading an image or video file below.
+This application detects face(s) in images, videos, and via your live webcam using OpenCV's deep learning model.<br>
+Start by uploading an image or video file, or use your webcam below.
 </h3>
 """, unsafe_allow_html=True)
 
-
+# File uploaders for image and video.
 img_file_buffer = st.file_uploader("Choose an image file with face(s) in it to be analyzed", type=['jpg', 'jpeg', 'png'])
 video_file_buffer = st.file_uploader("Choose a video file with face(s) in it to be analyzed", type=['mp4', 'avi', 'mov'])
 
@@ -103,7 +103,6 @@ if img_file_buffer is not None:
     # Adjustable Parameters
     conf_threshold = st.slider("Confidence Threshold", min_value=0.0, max_value=1.0, step=0.01, value=0.5)
     box_color_hex = st.color_picker("Bounding Box Color", "#00FF00")
-    # Change default thickness value to 8 here
     thickness = st.slider("Bounding Box Thickness", 1, 10, 8)
     # Convert hex to BGR tuple.
     box_color = tuple(int(box_color_hex[i:i+2], 16) for i in (1, 3, 5))
@@ -156,7 +155,6 @@ if video_file_buffer is not None:
     box_color_video_hex = st.color_picker("Bounding Box Color for Video", "#00FF00")
     box_color_video = tuple(int(box_color_video_hex[i:i+2], 16) for i in (1, 3, 5))
     box_color_video = (box_color_video[2], box_color_video[1], box_color_video[0])
-    # Change default thickness value to 8 here as well
     thickness_video = st.slider("Bounding Box Thickness for Video", 1, 10, 8)
     
     # Video rotation buttons.
@@ -226,6 +224,40 @@ if video_file_buffer is not None:
     except Exception as e:
         st.error(f"Error deleting temporary file: {e}")
 
+# ---------------------
+# Live Webcam Face Detection
+# ---------------------
+st.header("Live Webcam Face Detection")
+
+# Import the webrtc component
+try:
+    from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
+    import av
+except ImportError:
+    st.error("Please install streamlit-webrtc: pip install streamlit-webrtc")
+
+# Define a video transformer for live face detection.
+class FaceDetectionTransformer(VideoTransformerBase):
+    def __init__(self):
+        # Load the model once per transformer instance.
+        self.net = load_model()
+        self.conf_threshold = 0.5
+        self.box_color = (0, 255, 0)
+        self.thickness = 8
+
+    def transform(self, frame):
+        # Convert the frame to a NumPy array.
+        img = frame.to_ndarray(format="bgr24")
+        # Run face detection.
+        detections = detectFaceOpenCVDnn(self.net, img)
+        # Process and annotate the frame.
+        processed_frame = process_detections(img, detections, self.conf_threshold, self.box_color, self.thickness)
+        return processed_frame
+
+# Start the webcam stream with live face detection.
+webrtc_streamer(key="live", video_transformer_factory=FaceDetectionTransformer)
+
+# Footer
 st.markdown("""
 <hr>
 <p style="text-align: center; color: gray;">
