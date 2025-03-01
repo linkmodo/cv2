@@ -36,15 +36,15 @@ Deep Learning Based Face Detection
 """, unsafe_allow_html=True)
 
 st.markdown("""
-<h2 style="
+<h3 style="
     text-align: center;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: black; /* fallback color */
+    color: white;
+    font-size: 20px;
 ">
-This application detect faces in images and videos using OpenCV's deep learning model. Upload an image or video to start.
-</h2>
+This application detects faces in images and videos using OpenCV's deep learning model. Upload an image or video to start.
+</h3>
 """, unsafe_allow_html=True)
+
 
 img_file_buffer = st.file_uploader("Choose an image file with face(s) in it to be analyzed", type=['jpg', 'jpeg', 'png'])
 video_file_buffer = st.file_uploader("Choose a video file with face(s) in it to be analyzed", type=['mp4', 'avi', 'mov'])
