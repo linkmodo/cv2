@@ -28,7 +28,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.markdown("""
+st.markdown(
+    """
 <h1 style="text-align: center;
     background: -webkit-linear-gradient(45deg, orange, yellow);
     -webkit-background-clip: text;
@@ -36,14 +37,19 @@ st.markdown("""
     color: black;">
 Deep Learning Based Face Detection
 </h1>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
-st.markdown("""
+st.markdown(
+    """
 <h3 style="text-align: center; color: white; font-size: 20px;">
 This app detects face(s) in images and videos using OpenCV's deep learning model.<br>
 <strong>No data is saved after exiting this page</strong>
 </h3>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # ---------------------
 # Load DNN Model
@@ -91,6 +97,46 @@ def rotate_image(image, angle):
         return image
 
 # ---------------------
+# Sidebar Options for Image and Video Processing
+# ---------------------
+st.sidebar.header("Image Processing Options")
+conf_threshold_img = st.sidebar.slider("Confidence Threshold (Image)", 0.0, 1.0, 0.5, 0.01)
+box_color_img_hex = st.sidebar.color_picker("Bounding Box Color (Image)", "#00FF00")
+thickness_img = st.sidebar.slider("Bounding Box Thickness (Image)", 1, 10, 4)
+rotation_choice_img = st.sidebar.radio(
+    "Image Rotation", ("None", "Rotate 90° CW", "Rotate 90° CCW", "Rotate 180")
+)
+rotation_angle_image = None
+if rotation_choice_img == "Rotate 90° CW":
+    rotation_angle_image = cv2.ROTATE_90_CLOCKWISE
+elif rotation_choice_img == "Rotate 90° CCW":
+    rotation_angle_image = cv2.ROTATE_90_COUNTERCLOCKWISE
+elif rotation_choice_img == "Rotate 180":
+    rotation_angle_image = cv2.ROTATE_180
+
+st.sidebar.header("Video Processing Options")
+conf_threshold_video = st.sidebar.slider("Confidence Threshold (Video)", 0.0, 1.0, 0.5, 0.01)
+box_color_video_hex = st.sidebar.color_picker("Bounding Box Color (Video)", "#00FF00")
+thickness_video = st.sidebar.slider("Bounding Box Thickness (Video)", 1, 10, 4)
+rotation_choice_video = st.sidebar.radio(
+    "Video Rotation", ("None", "Rotate 90° CW", "Rotate 90° CCW", "Rotate 180")
+)
+rotation_angle_video = None
+if rotation_choice_video == "Rotate 90° CW":
+    rotation_angle_video = cv2.ROTATE_90_CLOCKWISE
+elif rotation_choice_video == "Rotate 90° CCW":
+    rotation_angle_video = cv2.ROTATE_90_COUNTERCLOCKWISE
+elif rotation_choice_video == "Rotate 180":
+    rotation_angle_video = cv2.ROTATE_180
+
+def hex_to_bgr(hex_str):
+    rgb = tuple(int(hex_str[i:i+2], 16) for i in (1, 3, 5))
+    return (rgb[2], rgb[1], rgb[0])
+
+box_color_img = hex_to_bgr(box_color_img_hex)
+box_color_video = hex_to_bgr(box_color_video_hex)
+
+# ---------------------
 # Image Processing Section
 # ---------------------
 img_file_buffer = st.file_uploader("Upload an image file with face(s) in it to be analyzed", type=['jpg', 'jpeg', 'png'])
@@ -101,28 +147,8 @@ if img_file_buffer is not None:
     col1, col2 = st.columns(2)
     col1.image(image, channels='BGR', caption="Input Image")
     
-    conf_threshold_img = st.slider("Confidence Threshold (Image)", 0.0, 1.0, 0.5, 0.01)
-    box_color_hex = st.color_picker("Bounding Box Color (Image)", "#00FF00")
-    thickness_img = st.slider("Bounding Box Thickness (Image)", 1, 10, 4)
-    # Convert hex to BGR tuple
-    box_color_img = tuple(int(box_color_hex[i:i+2], 16) for i in (1, 3, 5))
-    box_color_img = (box_color_img[2], box_color_img[1], box_color_img[0])
-    
-    # Image rotation controls
-    if 'rotation_angle_image' not in st.session_state:
-        st.session_state.rotation_angle_image = None
-
-    r1, r2, r3, r4 = st.columns(4)
-    if r1.button("Rotate 90° CW (Image)"):
-        st.session_state.rotation_angle_image = cv2.ROTATE_90_CLOCKWISE
-    if r2.button("Rotate 90° CCW (Image)"):
-        st.session_state.rotation_angle_image = cv2.ROTATE_90_COUNTERCLOCKWISE
-    if r3.button("Rotate 180° (Image)"):
-        st.session_state.rotation_angle_image = cv2.ROTATE_180
-    if r4.button("Reset Rotation (Image)"):
-        st.session_state.rotation_angle_image = None
-
-    rotated_image = rotate_image(image, st.session_state.rotation_angle_image)
+    # Apply rotation from sidebar options.
+    rotated_image = rotate_image(image, rotation_angle_image)
     detections = detectFaceOpenCVDnn(net, rotated_image)
     out_image = process_detections(rotated_image.copy(), detections, conf_threshold_img, box_color_img, thickness_img)
     
@@ -148,26 +174,7 @@ if video_file_buffer is not None:
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = int(cap.get(cv2.CAP_PROP_FPS))
     
-    conf_threshold_video = st.slider("Confidence Threshold (Video)", 0.0, 1.0, 0.5, 0.01)
-    box_color_video_hex = st.color_picker("Bounding Box Color (Video)", "#00FF00")
-    thickness_video = st.slider("Bounding Box Thickness (Video)", 1, 10, 4)
-    box_color_video = tuple(int(box_color_video_hex[i:i+2], 16) for i in (1, 3, 5))
-    box_color_video = (box_color_video[2], box_color_video[1], box_color_video[0])
-    
-    if 'rotation_angle_video' not in st.session_state:
-        st.session_state.rotation_angle_video = None
-
-    vr1, vr2, vr3, vr4 = st.columns(4)
-    if vr1.button("Rotate 90° CW (Video)"):
-        st.session_state.rotation_angle_video = cv2.ROTATE_90_CLOCKWISE
-    if vr2.button("Rotate 90° CCW (Video)"):
-        st.session_state.rotation_angle_video = cv2.ROTATE_90_COUNTERCLOCKWISE
-    if vr3.button("Rotate 180° (Video)"):
-        st.session_state.rotation_angle_video = cv2.ROTATE_180
-    if vr4.button("Reset Rotation (Video)"):
-        st.session_state.rotation_angle_video = None
-
-    rotation_angle_video = st.session_state.rotation_angle_video
+    # Adjust output dimensions if a 90° rotation is selected.
     out_width = width
     out_height = height
     if rotation_angle_video in [cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_90_COUNTERCLOCKWISE]:
@@ -212,9 +219,12 @@ if video_file_buffer is not None:
 # ---------------------
 # Footer
 # ---------------------
-st.markdown("""
+st.markdown(
+    """
 <hr>
 <p style="text-align: center; color: gray;">
 Built by Li Fan 2025-03-01 | Powered by OpenCV & Streamlit
 </p>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
