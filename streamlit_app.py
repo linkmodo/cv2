@@ -37,10 +37,14 @@ def process_detections(frame, detections, conf_threshold=0.5, box_color=(0, 255,
             cv2.rectangle(frame, (x1, y1), (x2, y2), box_color, thickness, cv2.LINE_8)
     return frame
 
-# Function to rotate an image
+# Function to rotate an image or video frame
 def rotate_image(image, angle):
-    if angle != 0:
-        image = cv2.rotate(image, angle)
+    if angle == cv2.ROTATE_90_CLOCKWISE:
+        return cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
+    elif angle == cv2.ROTATE_90_COUNTERCLOCKWISE:
+        return cv2.rotate(image, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    elif angle == cv2.ROTATE_180:
+        return cv2.rotate(image, cv2.ROTATE_180)
     return image
 
 # Load the DNN model.
@@ -83,6 +87,8 @@ if img_file_buffer is not None:
 
 # Video Processing
 if video_file_buffer is not None:
+    rotation_angle = st.selectbox("Rotate Video Frames", [0, cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_90_COUNTERCLOCKWISE, cv2.ROTATE_180], format_func=lambda x: "None" if x == 0 else "90° CW" if x == cv2.ROTATE_90_CLOCKWISE else "90° CCW" if x == cv2.ROTATE_90_COUNTERCLOCKWISE else "180°")
+    
     tfile = tempfile.NamedTemporaryFile(delete=False)
     tfile.write(video_file_buffer.read())
     video_path = tfile.name
@@ -91,12 +97,11 @@ if video_file_buffer is not None:
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     output_path = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4").name
     out = cv2.VideoWriter(output_path, fourcc, int(cap.get(cv2.CAP_PROP_FPS)),
-                          (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))))
+                          (int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)), int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))) if rotation_angle else (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))))
     
     conf_threshold = st.slider("Confidence Threshold for Video", 0.0, 1.0, 0.5, 0.01)
     box_color = st.color_picker("Bounding Box Color for Video", "#00FF00")
     thickness = st.slider("Bounding Box Thickness for Video", 1, 10, 2)
-    rotation_angle = st.selectbox("Rotate Video Frames", [0, cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_90_COUNTERCLOCKWISE, cv2.ROTATE_180], format_func=lambda x: "None" if x == 0 else "90° CW" if x == cv2.ROTATE_90_CLOCKWISE else "90° CCW" if x == cv2.ROTATE_90_COUNTERCLOCKWISE else "180°")
     
     stframe = st.empty()
     
