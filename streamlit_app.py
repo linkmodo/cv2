@@ -41,7 +41,7 @@ Deep Learning Based Face Detection
 st.markdown("""
 <h3 style="text-align: center; color: white; font-size: 20px;">
 This app detects face(s) in images and videos using OpenCV's deep learning model.<br>
-*This application does not save any userdata after exiting*
+*This application does not save any user data after exiting*
 </h3>
 """, unsafe_allow_html=True)
 
