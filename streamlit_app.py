@@ -14,7 +14,7 @@ st.markdown(
     """
     <style>
     .block-container {
-        max-width: 1080px;
+        max-width: 900px;
         padding-left: 1rem;
         padding-right: 1rem;
     }
@@ -23,7 +23,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.title("Deep Learning Based Face Detection Powered By OpenCV")
+st.markdown("<h1 style='text-align: center;'>Deep Learning based Face Detection Using OpenCV</h1>", unsafe_allow_html=True)
 st.write("Detect faces in images and videos using OpenCV's deep learning model. Upload an image or video to start.")
 
 img_file_buffer = st.file_uploader("Choose an image file to be analyzed", type=['jpg', 'jpeg', 'png'])
