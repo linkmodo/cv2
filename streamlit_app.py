@@ -219,6 +219,6 @@ if video_file_buffer is not None:
 st.markdown("""
 <hr>
 <p style="text-align: center; color: gray;">
-**Built by Li Fan** 2025-03-01 | Powered by OpenCV & Streamlit
+Built by Li Fan 2025-03-01 | Powered by OpenCV & Streamlit
 </p>
 """, unsafe_allow_html=True)
