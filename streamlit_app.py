@@ -37,6 +37,12 @@ def process_detections(frame, detections, conf_threshold=0.5, box_color=(0, 255,
             cv2.rectangle(frame, (x1, y1), (x2, y2), box_color, thickness, cv2.LINE_8)
     return frame
 
+# Function to rotate an image
+def rotate_image(image, angle):
+    if angle != 0:
+        image = cv2.rotate(image, angle)
+    return image
+
 # Load the DNN model.
 @st.cache_resource()
 def load_model():
@@ -60,10 +66,12 @@ if img_file_buffer is not None:
     conf_threshold = st.slider("Confidence Threshold", min_value=0.0, max_value=1.0, step=.01, value=0.5)
     box_color = st.color_picker("Bounding Box Color", "#00FF00")  # Default green
     thickness = st.slider("Bounding Box Thickness", 1, 10, 2)
+    rotation_angle = st.selectbox("Rotate Image", [0, cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_90_COUNTERCLOCKWISE, cv2.ROTATE_180], format_func=lambda x: "None" if x == 0 else "90° CW" if x == cv2.ROTATE_90_CLOCKWISE else "90° CCW" if x == cv2.ROTATE_90_COUNTERCLOCKWISE else "180°")
     
     box_color = tuple(int(box_color[i:i+2], 16) for i in (1, 3, 5))
     box_color = (box_color[2], box_color[1], box_color[0])
     
+    image = rotate_image(image, rotation_angle)
     detections = detectFaceOpenCVDnn(net, image)
     out_image = process_detections(image, detections, conf_threshold, box_color, thickness)
     
@@ -88,9 +96,7 @@ if video_file_buffer is not None:
     conf_threshold = st.slider("Confidence Threshold for Video", 0.0, 1.0, 0.5, 0.01)
     box_color = st.color_picker("Bounding Box Color for Video", "#00FF00")
     thickness = st.slider("Bounding Box Thickness for Video", 1, 10, 2)
-    
-    box_color = tuple(int(box_color[i:i+2], 16) for i in (1, 3, 5))
-    box_color = (box_color[2], box_color[1], box_color[0])
+    rotation_angle = st.selectbox("Rotate Video Frames", [0, cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_90_COUNTERCLOCKWISE, cv2.ROTATE_180], format_func=lambda x: "None" if x == 0 else "90° CW" if x == cv2.ROTATE_90_CLOCKWISE else "90° CCW" if x == cv2.ROTATE_90_COUNTERCLOCKWISE else "180°")
     
     stframe = st.empty()
     
@@ -98,6 +104,7 @@ if video_file_buffer is not None:
         ret, frame = cap.read()
         if not ret:
             break
+        frame = rotate_image(frame, rotation_angle)
         detections = detectFaceOpenCVDnn(net, frame)
         frame = process_detections(frame, detections, conf_threshold, box_color, thickness)
         out.write(frame)
