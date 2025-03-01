@@ -28,7 +28,7 @@ st.markdown(
     """
     <style>
     .stApp {
-        background-image: url("https://raw.githubusercontent.com/linkmodo/cv2/main/theatre-4981935.jpg");
+        background-image: url("https://raw.githubusercontent.com/linkmodo/cv2/main/theatre-4981934.jpg");
         background-size: cover;
         background-position: center;
     }
