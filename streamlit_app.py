@@ -5,6 +5,8 @@ from PIL import Image
 from io import BytesIO
 import base64
 import tempfile
+from moviepy.editor import VideoFileClip, AudioFileClip
+import os
 
 # Load logo and display it at the top
 # logo = "logo.png"  # Ensure you have a logo file in the same directory
@@ -86,14 +88,18 @@ if img_file_buffer is not None:
 
 # Video Processing
 if video_file_buffer is not None:
-    tfile = tempfile.NamedTemporaryFile(delete=False)
+    # Save uploaded video to temporary file
+    tfile = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4')
     tfile.write(video_file_buffer.read())
     video_path = tfile.name
     
+    # Create temporary file for processed video without audio
+    temp_output_path = tempfile.NamedTemporaryFile(delete=False, suffix="_temp.mp4").name
+    final_output_path = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4").name
+    
     cap = cv2.VideoCapture(video_path)
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    output_path = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4").name
-    out = cv2.VideoWriter(output_path, fourcc, int(cap.get(cv2.CAP_PROP_FPS)),
+    out = cv2.VideoWriter(temp_output_path, fourcc, int(cap.get(cv2.CAP_PROP_FPS)),
                           (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))))
     
     conf_threshold = st.slider("Confidence Threshold for Video", 0.0, 1.0, 0.5, 0.01)
@@ -104,12 +110,23 @@ if video_file_buffer is not None:
     thickness = st.slider("Bounding Box Thickness for Video", 1, 10, 2)
     rotation_angle = st.selectbox("Rotate Video Frames", [0, cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_90_COUNTERCLOCKWISE, cv2.ROTATE_180], format_func=lambda x: "None" if x == 0 else "90° CW" if x == cv2.ROTATE_90_CLOCKWISE else "90° CCW" if x == cv2.ROTATE_90_COUNTERCLOCKWISE else "180°")
     
+    progress_text = st.empty()
+    progress_bar = st.progress(0)
     stframe = st.empty()
+    
+    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    current_frame = 0
     
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
             break
+            
+        current_frame += 1
+        progress = int((current_frame / frame_count) * 100)
+        progress_text.text(f"Processing video: {progress}%")
+        progress_bar.progress(progress)
+        
         frame = rotate_image(frame, rotation_angle)
         detections = detectFaceOpenCVDnn(net, frame)
         frame = process_detections(frame, detections, conf_threshold, box_color, thickness)
@@ -119,8 +136,47 @@ if video_file_buffer is not None:
     cap.release()
     out.release()
     
-    with open(output_path, "rb") as f:
+    progress_text.text("Merging audio with processed video...")
+    
+    try:
+        # Load the original video with audio and processed video
+        original_video = VideoFileClip(video_path)
+        processed_video = VideoFileClip(temp_output_path)
+        
+        # If original video has audio, add it to processed video
+        if original_video.audio is not None:
+            final_video = processed_video.set_audio(original_video.audio)
+            final_video.write_videofile(final_output_path, codec='libx264', audio_codec='aac')
+        else:
+            # If no audio, just use the processed video
+            os.rename(temp_output_path, final_output_path)
+        
+        # Clean up
+        original_video.close()
+        processed_video.close()
+        
+    except Exception as e:
+        st.error(f"Error processing audio: {str(e)}")
+        final_output_path = temp_output_path
+    
+    progress_text.text("Processing complete!")
+    progress_bar.progress(100)
+    
+    # Clean up temporary files
+    try:
+        os.unlink(tfile.name)
+        os.unlink(temp_output_path)
+    except:
+        pass
+    
+    with open(final_output_path, "rb") as f:
         st.download_button("Download Processed Video", f, file_name="processed_video.mp4", mime="video/mp4")
+    
+    # Clean up final output
+    try:
+        os.unlink(final_output_path)
+    except:
+        pass
 
 # Footer with credits
 st.markdown("""
