@@ -103,7 +103,7 @@ def rotate_image(image, angle):
 # ---------------------
 # Sidebar Options for Image and Video Processing
 # ---------------------
-st.sidebar.header("Image Processing Options")
+st.sidebar.header("[Image Processing Options]")
 conf_threshold_img = st.sidebar.slider("Confidence Threshold (Image)", 0.0, 1.0, 0.5, 0.01)
 box_color_img_hex = st.sidebar.color_picker("Bounding Box Color (Image)", "#00FF00")
 thickness_img = st.sidebar.slider("Bounding Box Thickness (Image)", 1, 10, 4)
@@ -121,7 +121,7 @@ elif rotation_choice_img == "Rotate 180":
 # Divider between Image and Video Options.
 st.sidebar.markdown("---")
 
-st.sidebar.header("Video Processing Options")
+st.sidebar.header("[Video Processing Options]")
 conf_threshold_video = st.sidebar.slider("Confidence Threshold (Video)", 0.0, 1.0, 0.5, 0.01)
 box_color_video_hex = st.sidebar.color_picker("Bounding Box Color (Video)", "#00FF00")
 thickness_video = st.sidebar.slider("Bounding Box Thickness (Video)", 1, 10, 4)
