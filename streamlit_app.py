@@ -9,7 +9,7 @@ import os
 # ---------------------
 # Page Configuration & Styling
 # ---------------------
-st.set_page_config(page_title="Deep Learning Face Detection", layout="wide")
+st.set_page_config(page_title="Deep Learning Face Detection Model", layout="wide")
 st.markdown(
     """
     <style>
@@ -40,7 +40,7 @@ Deep Learning Based Face Detection
 
 st.markdown("""
 <h3 style="text-align: center; color: white; font-size: 20px;">
-This application detects face(s) in images, videos, or webcam streams using OpenCV's deep learning model.<br>
+This app detects face(s) in images and videos using OpenCV's deep learning model.<br>
 <strong>No data is saved after exiting this page</strong>
 </h3>
 """, unsafe_allow_html=True)
