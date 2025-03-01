@@ -30,7 +30,7 @@ st.markdown(
 
 st.markdown("""
 <h1 style="text-align: center;
-    background: -webkit-linear-gradient(45deg, orange, yellow);
+    background: -webkit-linear-gradient(75deg, orange, yellow);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     color: black;">
@@ -41,7 +41,7 @@ Deep Learning Based Face Detection
 st.markdown("""
 <h3 style="text-align: center; color: white; font-size: 20px;">
 This app detects face(s) in images and videos using OpenCV's deep learning model.<br>
-**No data is saved after exiting this page**
+*No data is saved after exiting this page.
 </h3>
 """, unsafe_allow_html=True)
 
