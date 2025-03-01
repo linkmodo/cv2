@@ -41,8 +41,8 @@ st.markdown("""
     font-size: 20px;
 ">
 This application detects face(s) in images or videos using OpenCV's deep learning model.<br><br>
-Start by uploading an image or video file below.<br><br>
-No data is saved after exiting this page.
+Start by uploading an image or video file below.<br>
+*No data is saved after exiting this page*
 </h3>
 """, unsafe_allow_html=True)
 
