@@ -1,2 +1,2 @@
-# cv2
-computer vision project
+
+# Face Detection using OpenCV and Streamlit
