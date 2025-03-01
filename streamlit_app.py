@@ -258,10 +258,8 @@ webrtc_streamer(
     key="face-detection-webcam",
     video_transformer_factory=FaceDetectionVideoTransformer,
     media_stream_constraints={
-        "video": True,  # Remove the resolution constraints for testing.
+        "video": {"width": {"max": 320}, "height": {"max": 240}, "frameRate": {"max": 30}},
         "audio": False,
-}
-
     }
 )
 
