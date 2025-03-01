@@ -245,43 +245,16 @@ if video_file_buffer is not None:
 # ---------------------
 st.markdown("## Webcam Face Detection")
 
+# Initialize webcam state variables if they don't exist
+if 'camera' not in st.session_state:
+    st.session_state.camera = None
+if 'run' not in st.session_state:
+    st.session_state.run = False
+
 try:
-    # Create a VideoTransformer for webcam stream processing.
-    class FaceDetectionVideoTransformer(VideoTransformerBase):
-        def __init__(self):
-            self.net = load_model()
-            self.confidence_threshold = 0.5
-
-        def transform(self, frame):
-            try:
-                # Convert frame to a BGR image.
-                img = frame.to_ndarray(format="bgr24")
-                # Run face detection.
-                detections = detectFaceOpenCVDnn(self.net, img)
-                # Draw bounding boxes.
-                img = process_detections(
-                    img, 
-                    detections, 
-                    conf_threshold=self.confidence_threshold,
-                    box_color=(0, 255, 0),
-                    thickness=2
-                )
-                return img
-            except Exception as e:
-                st.error(f"Error processing frame: {str(e)}")
-                return img
-
-    # Configure STUN servers
-    rtc_configuration = RTCConfiguration(
-        {"iceServers": [
-            {"urls": ["stun:stun.l.google.com:19302"]},
-            {"urls": ["stun:stun1.l.google.com:19302"]},
-        ]}
-    )
-
-    # Add webcam controls
+    # Webcam controls
     st.sidebar.markdown("### Webcam Settings")
-    confidence = st.sidebar.slider(
+    confidence_threshold = st.sidebar.slider(
         "Detection Confidence",
         min_value=0.0,
         max_value=1.0,
@@ -289,22 +262,49 @@ try:
         step=0.1
     )
 
-    # Start the webcam streamer
-    ctx = webrtc_streamer(
-        key="face-detection-webcam",
-        mode=WebRtcMode.SENDRECV,
-        rtc_configuration=rtc_configuration,
-        video_transformer_factory=FaceDetectionVideoTransformer,
-        media_stream_constraints={
-            "video": {"frameRate": {"ideal": 30}},
-            "audio": False,
-        },
-        async_processing=True,
-    )
+    # Create a placeholder for the webcam feed
+    FRAME_WINDOW = st.image([])
+    
+    # Checkbox to control webcam
+    run = st.checkbox('Start Webcam')
 
-    # Update confidence threshold when streaming is active
-    if ctx.video_transformer:
-        ctx.video_transformer.confidence_threshold = confidence
+    # Initialize or release camera based on checkbox state
+    if run and st.session_state.camera is None:
+        st.session_state.camera = cv2.VideoCapture(0)
+    elif not run and st.session_state.camera is not None:
+        st.session_state.camera.release()
+        st.session_state.camera = None
+
+    # Main webcam loop
+    if run:
+        while st.session_state.camera is not None:
+            ret, frame = st.session_state.camera.read()
+            if not ret:
+                st.error("Failed to capture frame from webcam")
+                break
+
+            # Run face detection
+            detections = detectFaceOpenCVDnn(net, frame)
+            
+            # Draw bounding boxes
+            frame = process_detections(
+                frame,
+                detections,
+                conf_threshold=confidence_threshold,
+                box_color=(0, 255, 0),
+                thickness=2
+            )
+
+            # Convert BGR to RGB for display
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            
+            # Display the frame
+            FRAME_WINDOW.image(frame)
+    else:
+        st.write('Webcam Stopped')
+        if st.session_state.camera is not None:
+            st.session_state.camera.release()
+            st.session_state.camera = None
 
 except Exception as e:
     st.error(f"""
@@ -315,6 +315,9 @@ except Exception as e:
     2. Have a working webcam connected
     3. No other application is using the webcam
     """)
+    if st.session_state.camera is not None:
+        st.session_state.camera.release()
+        st.session_state.camera = None
 
 # Footer
 st.markdown("""
