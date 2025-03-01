@@ -41,13 +41,14 @@ st.markdown("""
     font-size: 20px;
 ">
 This application detects face(s) in images or videos using OpenCV's deep learning model.<br>
-Start by uploading an image or video file, or use your webcam below.
+Start by uploading an image or video file below.<br>
+No data is saved after exiting this page.
 </h3>
 """, unsafe_allow_html=True)
 
 # File uploaders for image and video.
-img_file_buffer = st.file_uploader("Choose an image file with face(s) in it to be analyzed", type=['jpg', 'jpeg', 'png'])
-video_file_buffer = st.file_uploader("Choose a video file with face(s) in it to be analyzed", type=['mp4', 'avi', 'mov'])
+img_file_buffer = st.file_uploader("Upload an image file with face(s) in it to be analyzed", type=['jpg', 'jpeg', 'png'])
+video_file_buffer = st.file_uploader("upload a video file with face(s) in it to be analyzed", type=['mp4', 'avi', 'mov'])
 
 # Function for detecting faces using OpenCV's DNN.
 def detectFaceOpenCVDnn(net, frame):
