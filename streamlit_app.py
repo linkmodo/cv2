@@ -235,27 +235,33 @@ st.markdown("## Webcam Face Detection")
 # Create a VideoTransformer for webcam stream processing.
 class FaceDetectionVideoTransformer(VideoTransformerBase):
     def __init__(self):
-        # Load the DNN model once when the transformer is initialized.
         self.net = load_model()
 
     def transform(self, frame):
-        # Convert frame to a BGR image.
-        img = frame.to_ndarray(format="bgr24")
-        # Resize to max resolution 320x240 to reduce bandwidth.
-        img = cv2.resize(img, (320, 240))
-        # Run face detection.
-        detections = detectFaceOpenCVDnn(self.net, img)
-        # Draw bounding boxes (using fixed parameters, adjust if needed).
-        img = process_detections(img, detections, conf_threshold=0.5, box_color=(0, 255, 0), thickness=2)
+        try:
+            # Convert frame to a BGR image.
+            img = frame.to_ndarray(format="bgr24")
+            # Resize to max resolution 320x240.
+            img = cv2.resize(img, (320, 240))
+            # Run face detection.
+            detections = detectFaceOpenCVDnn(self.net, img)
+            # Draw bounding boxes.
+            img = process_detections(img, detections, conf_threshold=0.5, box_color=(0, 255, 0), thickness=2)
+        except Exception as e:
+            # Print the error to the console for debugging.
+            print("Error in transform:", e)
         return img
+
 
 # Start the webcam streamer with resolution constraints.
 webrtc_streamer(
     key="face-detection-webcam",
     video_transformer_factory=FaceDetectionVideoTransformer,
     media_stream_constraints={
-        "video": {"width": {"max": 320}, "height": {"max": 240}, "frameRate": {"max": 30}},
+        "video": True,  # Remove the resolution constraints for testing.
         "audio": False,
+}
+
     }
 )
 
