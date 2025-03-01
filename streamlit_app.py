@@ -20,7 +20,7 @@ def detectFaceOpenCVDnn(net, frame):
     return detections
 
 # Function for drawing bounding boxes on the frame.
-def process_detections(frame, detections, conf_threshold=0.5, box_color=(0, 255, 0), thickness=2):
+def process_detections(frame, detections, conf_threshold=0.5, box_color=(0, 255, 0), thickness=5):
     frame_h, frame_w = frame.shape[:2]
     for i in range(detections.shape[2]):
         confidence = detections[0, 0, i, 2]
