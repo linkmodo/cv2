@@ -217,6 +217,8 @@ if video_file_buffer is not None:
         st.error(f"Error deleting temporary file: {e}")
 
 st.markdown("""
----
+<hr>
+<p style="text-align: center; color: gray;">
 **Built by Li Fan** 2025-03-01 | Powered by OpenCV & Streamlit
-""")
+</p>
+""", unsafe_allow_html=True)
