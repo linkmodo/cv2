@@ -224,69 +224,6 @@ if video_file_buffer is not None:
     except Exception as e:
         st.error(f"Error deleting temporary file: {e}")
 
-# ---------------------
-# Live Webcam Face Detection
-# ---------------------
-st.markdown("""
-<h3 style="
-    text-align: center;
-    color: white;
-    font-size: 20px;
-">
-Live Webcam Face Detection
-</h3>
-""", unsafe_allow_html=True)
-
-if st.button("Start Webcam"):
-    try:
-        cap = cv2.VideoCapture(0)
-        if not cap.isOpened():
-            st.error("Unable to access webcam. Please check your camera permissions.")
-        else:
-            # Add webcam settings
-            conf_threshold_webcam = st.slider(
-                "Confidence Threshold (Webcam)",
-                min_value=0.0,
-                max_value=1.0,
-                value=0.5,
-                step=0.01
-            )
-            
-            box_color_webcam = (0, 255, 0)  # Default green
-            thickness_webcam = 4
-            
-            stframe = st.empty()
-            stop_button = st.button("Stop Webcam")
-            
-            while not stop_button:
-                ret, frame = cap.read()
-                if ret:
-                    # Run face detection
-                    detections = detectFaceOpenCVDnn(net, frame)
-                    
-                    # Process and annotate the frame
-                    processed_frame = process_detections(
-                        frame.copy(),
-                        detections,
-                        conf_threshold_webcam,
-                        box_color_webcam,
-                        thickness_webcam
-                    )
-                    
-                    # Display the frame
-                    stframe.image(processed_frame, channels="BGR")
-                else:
-                    st.error("Error reading from webcam")
-                    break
-            
-            cap.release()
-            stframe.empty()
-            
-    except Exception as e:
-        st.error(f"An error occurred with the webcam: {str(e)}")
-        if 'cap' in locals():
-            cap.release()
-
 # Footer
 st.markdown("""
 <hr>
