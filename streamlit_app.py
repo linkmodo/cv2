@@ -227,7 +227,15 @@ if video_file_buffer is not None:
 # ---------------------
 # Live Webcam Face Detection
 # ---------------------
-st.header("Live Webcam Face Detection")
+st.markdown("""
+<h3 style="
+    text-align: center;
+    color: white;
+    font-size: 20px;
+">
+Live Webcam Face Detection
+</h3>
+""", unsafe_allow_html=True)
 
 # Import the webrtc component
 try:
