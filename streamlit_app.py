@@ -210,6 +210,55 @@ if video_file_buffer is not None:
         st.error(f"Error deleting temporary file: {e}")
 
 # ---------------------
+# Webcam Face Detection
+# ---------------------
+st.markdown("<h2 style='text-align: center; color: white;'>Webcam Face Detection</h2>", unsafe_allow_html=True)
+
+# Webcam settings
+conf_threshold_webcam = st.slider("Confidence Threshold (Webcam)", 0.0, 1.0, 0.5, 0.01)
+box_color_webcam_hex = st.color_picker("Bounding Box Color (Webcam)", "#00FF00")
+thickness_webcam = st.slider("Bounding Box Thickness (Webcam)", 1, 10, 4)
+# Convert hex to BGR tuple
+box_color_webcam = tuple(int(box_color_webcam_hex[i:i+2], 16) for i in (1, 3, 5))
+box_color_webcam = (box_color_webcam[2], box_color_webcam[1], box_color_webcam[0])
+
+run_webcam = st.button("Start/Stop Webcam")
+
+if 'webcam_running' not in st.session_state:
+    st.session_state.webcam_running = False
+
+if run_webcam:
+    st.session_state.webcam_running = not st.session_state.webcam_running
+
+webcam_placeholder = st.empty()
+status_placeholder = st.empty()
+
+if st.session_state.webcam_running:
+    status_placeholder.success("Webcam is running. Click 'Start/Stop Webcam' to stop.")
+    try:
+        cap = cv2.VideoCapture(0)
+        if not cap.isOpened():
+            st.error("Could not open webcam. Please make sure your webcam is properly connected.")
+            st.session_state.webcam_running = False
+        else:
+            while st.session_state.webcam_running:
+                ret, frame = cap.read()
+                if not ret:
+                    st.error("Failed to get frame from webcam")
+                    break
+                
+                detections = detectFaceOpenCVDnn(net, frame)
+                processed_frame = process_detections(frame.copy(), detections, conf_threshold_webcam, box_color_webcam, thickness_webcam)
+                webcam_placeholder.image(processed_frame, channels="BGR", caption="Webcam Feed with Face Detection")
+                
+            cap.release()
+    except Exception as e:
+        st.error(f"Error accessing webcam: {e}")
+        st.session_state.webcam_running = False
+else:
+    status_placeholder.info("Click 'Start/Stop Webcam' to start face detection with your webcam.")
+
+# ---------------------
 # Footer
 # ---------------------
 st.markdown("""
