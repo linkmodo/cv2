@@ -130,33 +130,38 @@ detection_tab = st.tabs(["Image", "Video", "Webcam"])
 with detection_tab[0]:
     st.header("Image Face Detection")
     
-    # Sidebar settings for Image
-    with st.sidebar:
-        st.header("Image Detection Settings")
-        conf_threshold_img = st.slider("Confidence Threshold (Image)", 0.0, 1.0, 0.5, 0.01)
-        box_color_hex = st.color_picker("Bounding Box Color (Image)", "#00FF00")
-        thickness_img = st.slider("Bounding Box Thickness (Image)", 1, 10, 4)
-        # Convert hex to BGR tuple
-        box_color_img = tuple(int(box_color_hex[i:i+2], 16) for i in (1, 3, 5))
-        box_color_img = (box_color_img[2], box_color_img[1], box_color_img[0])
+    # Settings in collapsible expander
+    with st.expander("Image Detection Settings", expanded=False):
+        col1, col2 = st.columns(2)
         
-        # Add mosaic privacy filter option
-        st.subheader("Privacy Filter")
-        apply_mosaic_img = st.checkbox("Apply Mosaic Filter (Image)", False)
-        if apply_mosaic_img:
-            mosaic_level_img = st.slider("Mosaic Block Size (Image)", 5, 50, 15, 1)
+        with col1:
+            conf_threshold_img = st.slider("Confidence Threshold", 0.0, 1.0, 0.5, 0.01)
+            box_color_hex = st.color_picker("Bounding Box Color", "#00FF00")
+            thickness_img = st.slider("Bounding Box Thickness", 1, 10, 4)
         
-        # Image rotation controls
-        st.subheader("Rotation Options")
-        r1, r2, r3, r4 = st.columns(4)
-        if r1.button("Rotate 90° CW (Image)"):
-            st.session_state.rotation_angle_image = cv2.ROTATE_90_CLOCKWISE
-        if r2.button("Rotate 90° CCW (Image)"):
-            st.session_state.rotation_angle_image = cv2.ROTATE_90_COUNTERCLOCKWISE
-        if r3.button("Rotate 180° (Image)"):
-            st.session_state.rotation_angle_image = cv2.ROTATE_180
-        if r4.button("Reset (Image)"):
-            st.session_state.rotation_angle_image = None
+        with col2:
+            # Add mosaic privacy filter option
+            apply_mosaic_img = st.checkbox("Apply Mosaic Filter", False)
+            if apply_mosaic_img:
+                mosaic_level_img = st.slider("Mosaic Block Size", 5, 50, 15, 1)
+                
+            # Image rotation controls in sub-columns
+            st.subheader("Rotation Options")
+            rot1, rot2 = st.columns(2)
+            if rot1.button("Rotate 90° CW"):
+                st.session_state.rotation_angle_image = cv2.ROTATE_90_CLOCKWISE
+            if rot2.button("Rotate 90° CCW"):
+                st.session_state.rotation_angle_image = cv2.ROTATE_90_COUNTERCLOCKWISE
+            
+            rot3, rot4 = st.columns(2)
+            if rot3.button("Rotate 180°"):
+                st.session_state.rotation_angle_image = cv2.ROTATE_180
+            if rot4.button("Reset Rotation"):
+                st.session_state.rotation_angle_image = None
+    
+    # Convert hex to BGR tuple
+    box_color_img = tuple(int(box_color_hex[i:i+2], 16) for i in (1, 3, 5))
+    box_color_img = (box_color_img[2], box_color_img[1], box_color_img[0])
     
     # Image upload and processing
     img_file_buffer = st.file_uploader("Upload an image file with face(s) in it to be analyzed", type=['jpg', 'jpeg', 'png'])
@@ -164,8 +169,8 @@ with detection_tab[0]:
         raw_bytes = np.asarray(bytearray(img_file_buffer.read()), dtype=np.uint8)
         image = cv2.imdecode(raw_bytes, cv2.IMREAD_COLOR)
         
-        col1, col2 = st.columns(2)
-        col1.image(image, channels='BGR', caption="Input Image")
+        display_col1, display_col2 = st.columns(2)
+        display_col1.image(image, channels='BGR', caption="Input Image")
         
         rotated_image = rotate_image(image, st.session_state.rotation_angle_image)
         detections = detectFaceOpenCVDnn(net, rotated_image)
@@ -179,7 +184,7 @@ with detection_tab[0]:
             mosaic_level_img if apply_mosaic_img else 10
         )
         
-        col2.image(out_image, channels='BGR', caption="Output Image")
+        display_col2.image(out_image, channels='BGR', caption="Output Image")
         out_image_pil = Image.fromarray(cv2.cvtColor(out_image, cv2.COLOR_BGR2RGB))
         buf = BytesIO()
         out_image_pil.save(buf, format='JPEG')
@@ -191,32 +196,38 @@ with detection_tab[0]:
 with detection_tab[1]:
     st.header("Video Face Detection")
     
-    # Sidebar settings for Video
-    with st.sidebar:
-        st.header("Video Detection Settings")
-        conf_threshold_video = st.slider("Confidence Threshold (Video)", 0.0, 1.0, 0.5, 0.01)
-        box_color_video_hex = st.color_picker("Bounding Box Color (Video)", "#00FF00")
-        thickness_video = st.slider("Bounding Box Thickness (Video)", 1, 10, 4)
-        box_color_video = tuple(int(box_color_video_hex[i:i+2], 16) for i in (1, 3, 5))
-        box_color_video = (box_color_video[2], box_color_video[1], box_color_video[0])
+    # Settings in collapsible expander
+    with st.expander("Video Detection Settings", expanded=False):
+        col1, col2 = st.columns(2)
         
-        # Add mosaic privacy filter option
-        st.subheader("Privacy Filter")
-        apply_mosaic_video = st.checkbox("Apply Mosaic Filter (Video)", False)
-        if apply_mosaic_video:
-            mosaic_level_video = st.slider("Mosaic Block Size (Video)", 5, 50, 15, 1)
+        with col1:
+            conf_threshold_video = st.slider("Confidence Threshold", 0.0, 1.0, 0.5, 0.01)
+            box_color_video_hex = st.color_picker("Bounding Box Color", "#00FF00")
+            thickness_video = st.slider("Bounding Box Thickness", 1, 10, 4)
         
-        # Video rotation controls
-        st.subheader("Rotation Options")
-        vr1, vr2, vr3, vr4 = st.columns(4)
-        if vr1.button("Rotate 90° CW (Video)"):
-            st.session_state.rotation_angle_video = cv2.ROTATE_90_CLOCKWISE
-        if vr2.button("Rotate 90° CCW (Video)"):
-            st.session_state.rotation_angle_video = cv2.ROTATE_90_COUNTERCLOCKWISE
-        if vr3.button("Rotate 180° (Video)"):
-            st.session_state.rotation_angle_video = cv2.ROTATE_180
-        if vr4.button("Reset (Video)"):
-            st.session_state.rotation_angle_video = None
+        with col2:
+            # Add mosaic privacy filter option
+            apply_mosaic_video = st.checkbox("Apply Mosaic Filter", False)
+            if apply_mosaic_video:
+                mosaic_level_video = st.slider("Mosaic Block Size", 5, 50, 15, 1)
+            
+            # Video rotation controls in sub-columns
+            st.subheader("Rotation Options")
+            vrot1, vrot2 = st.columns(2)
+            if vrot1.button("Rotate 90° CW"):
+                st.session_state.rotation_angle_video = cv2.ROTATE_90_CLOCKWISE
+            if vrot2.button("Rotate 90° CCW"):
+                st.session_state.rotation_angle_video = cv2.ROTATE_90_COUNTERCLOCKWISE
+            
+            vrot3, vrot4 = st.columns(2)
+            if vrot3.button("Rotate 180°"):
+                st.session_state.rotation_angle_video = cv2.ROTATE_180
+            if vrot4.button("Reset Rotation"):
+                st.session_state.rotation_angle_video = None
+    
+    # Convert hex to BGR tuple
+    box_color_video = tuple(int(box_color_video_hex[i:i+2], 16) for i in (1, 3, 5))
+    box_color_video = (box_color_video[2], box_color_video[1], box_color_video[0])
     
     # Video upload and processing
     video_file_buffer = st.file_uploader("Upload a video file with face(s) in it to be analyzed", type=['mp4', 'avi', 'mov'])
@@ -288,22 +299,25 @@ with detection_tab[1]:
 with detection_tab[2]:
     st.header("Webcam Face Detection")
     
-    # Sidebar settings for Webcam
-    with st.sidebar:
-        st.header("Webcam Detection Settings")
-        conf_threshold_webcam = st.slider("Confidence Threshold (Webcam)", 0.0, 1.0, 0.5, 0.01)
-        box_color_webcam_hex = st.color_picker("Bounding Box Color (Webcam)", "#00FF00")
-        thickness_webcam = st.slider("Bounding Box Thickness (Webcam)", 1, 10, 4)
-        # Convert hex to BGR tuple
-        box_color_webcam = tuple(int(box_color_webcam_hex[i:i+2], 16) for i in (1, 3, 5))
-        box_color_webcam = (box_color_webcam[2], box_color_webcam[1], box_color_webcam[0])
-        show_confidence = st.checkbox("Show Confidence Score", True)
+    # Settings in collapsible expander
+    with st.expander("Webcam Detection Settings", expanded=False):
+        col1, col2 = st.columns(2)
         
-        # Add mosaic privacy filter option
-        st.subheader("Privacy Filter")
-        apply_mosaic_webcam = st.checkbox("Apply Mosaic Filter (Webcam)", False)
-        if apply_mosaic_webcam:
-            mosaic_level_webcam = st.slider("Mosaic Block Size (Webcam)", 5, 50, 15, 1)
+        with col1:
+            conf_threshold_webcam = st.slider("Confidence Threshold", 0.0, 1.0, 0.5, 0.01)
+            box_color_webcam_hex = st.color_picker("Bounding Box Color", "#00FF00")
+            thickness_webcam = st.slider("Bounding Box Thickness", 1, 10, 4)
+            show_confidence = st.checkbox("Show Confidence Score", True)
+        
+        with col2:
+            # Add mosaic privacy filter option
+            apply_mosaic_webcam = st.checkbox("Apply Mosaic Filter", False)
+            if apply_mosaic_webcam:
+                mosaic_level_webcam = st.slider("Mosaic Block Size", 5, 50, 15, 1)
+    
+    # Convert hex to BGR tuple
+    box_color_webcam = tuple(int(box_color_webcam_hex[i:i+2], 16) for i in (1, 3, 5))
+    box_color_webcam = (box_color_webcam[2], box_color_webcam[1], box_color_webcam[0])
     
     # Define RTC configuration with free STUN servers
     rtc_configuration = RTCConfiguration(
