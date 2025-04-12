@@ -1,7 +1,7 @@
-streamlit
-opencv-python-headless
-numpy
-Pillow
+streamlit>=1.25.0
+opencv-python>=4.8.0
+numpy>=1.22.0
+Pillow>=9.0.0
 streamlit-webrtc
 typing-extensions
 av
