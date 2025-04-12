@@ -222,41 +222,49 @@ thickness_webcam = st.slider("Bounding Box Thickness (Webcam)", 1, 10, 4)
 box_color_webcam = tuple(int(box_color_webcam_hex[i:i+2], 16) for i in (1, 3, 5))
 box_color_webcam = (box_color_webcam[2], box_color_webcam[1], box_color_webcam[0])
 
-run_webcam = st.button("Start/Stop Webcam")
+# Import streamlit-webrtc for better webcam handling
+from streamlit_webrtc import webrtc_streamer, VideoTransformerBase, RTCConfiguration
+import av
 
-if 'webcam_running' not in st.session_state:
-    st.session_state.webcam_running = False
+# Define RTC configuration with free STUN servers
+rtc_configuration = RTCConfiguration(
+    {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+)
 
-if run_webcam:
-    st.session_state.webcam_running = not st.session_state.webcam_running
+# Define video transformer for face detection
+class FaceDetectionTransformer(VideoTransformerBase):
+    def __init__(self):
+        self.threshold = conf_threshold_webcam
+        self.box_color = box_color_webcam
+        self.thickness = thickness_webcam
+        
+    def transform(self, frame):
+        img = frame.to_ndarray(format="bgr24")
+        detections = detectFaceOpenCVDnn(net, img)
+        processed_img = process_detections(
+            img.copy(), 
+            detections, 
+            self.threshold, 
+            self.box_color, 
+            self.thickness
+        )
+        return av.VideoFrame.from_ndarray(processed_img, format="bgr24")
 
-webcam_placeholder = st.empty()
-status_placeholder = st.empty()
+# Create the webrtc streamer component
+webrtc_ctx = webrtc_streamer(
+    key="face-detection",
+    video_transformer_factory=FaceDetectionTransformer,
+    rtc_configuration=rtc_configuration,
+    media_stream_constraints={"video": True, "audio": False},
+)
 
-if st.session_state.webcam_running:
-    status_placeholder.success("Webcam is running. Click 'Start/Stop Webcam' to stop.")
-    try:
-        cap = cv2.VideoCapture(0)
-        if not cap.isOpened():
-            st.error("Could not open webcam. Please make sure your webcam is properly connected.")
-            st.session_state.webcam_running = False
-        else:
-            while st.session_state.webcam_running:
-                ret, frame = cap.read()
-                if not ret:
-                    st.error("Failed to get frame from webcam")
-                    break
-                
-                detections = detectFaceOpenCVDnn(net, frame)
-                processed_frame = process_detections(frame.copy(), detections, conf_threshold_webcam, box_color_webcam, thickness_webcam)
-                webcam_placeholder.image(processed_frame, channels="BGR", caption="Webcam Feed with Face Detection")
-                
-            cap.release()
-    except Exception as e:
-        st.error(f"Error accessing webcam: {e}")
-        st.session_state.webcam_running = False
-else:
-    status_placeholder.info("Click 'Start/Stop Webcam' to start face detection with your webcam.")
+if webrtc_ctx.video_transformer:
+    webrtc_ctx.video_transformer.threshold = conf_threshold_webcam
+    webrtc_ctx.video_transformer.box_color = box_color_webcam
+    webrtc_ctx.video_transformer.thickness = thickness_webcam
+
+# Instructions for users
+st.info("If the webcam doesn't start automatically, check your browser permissions and try clicking the 'START' button. Allow camera access when prompted.")
 
 # ---------------------
 # Footer
