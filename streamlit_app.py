@@ -131,32 +131,32 @@ with detection_tab[0]:
     st.header("Image Face Detection")
     
     # Settings in collapsible expander
-    with st.expander("Image Detection Settings", expanded=False):
+    with st.expander("Image Detection Settings", expanded=False, key="img_settings_expander"):
         col1, col2 = st.columns(2)
         
         with col1:
-            conf_threshold_img = st.slider("Confidence Threshold", 0.0, 1.0, 0.5, 0.01)
-            box_color_hex = st.color_picker("Bounding Box Color", "#00FF00")
-            thickness_img = st.slider("Bounding Box Thickness", 1, 10, 4)
+            conf_threshold_img = st.slider("Confidence Threshold", 0.0, 1.0, 0.5, 0.01, key="conf_img")
+            box_color_hex = st.color_picker("Bounding Box Color", "#00FF00", key="color_img")
+            thickness_img = st.slider("Bounding Box Thickness", 1, 10, 4, key="thick_img")
         
         with col2:
             # Add mosaic privacy filter option
-            apply_mosaic_img = st.checkbox("Apply Mosaic Filter", False)
+            apply_mosaic_img = st.checkbox("Apply Mosaic Filter", False, key="mosaic_img_check")
             if apply_mosaic_img:
-                mosaic_level_img = st.slider("Mosaic Block Size", 5, 50, 15, 1)
+                mosaic_level_img = st.slider("Mosaic Block Size", 5, 50, 15, 1, key="mosaic_img_level")
                 
             # Image rotation controls in sub-columns
             st.subheader("Rotation Options")
             rot1, rot2 = st.columns(2)
-            if rot1.button("Rotate 90° CW"):
+            if rot1.button("Rotate 90° CW", key="rot90cw_img"):
                 st.session_state.rotation_angle_image = cv2.ROTATE_90_CLOCKWISE
-            if rot2.button("Rotate 90° CCW"):
+            if rot2.button("Rotate 90° CCW", key="rot90ccw_img"):
                 st.session_state.rotation_angle_image = cv2.ROTATE_90_COUNTERCLOCKWISE
             
             rot3, rot4 = st.columns(2)
-            if rot3.button("Rotate 180°"):
+            if rot3.button("Rotate 180°", key="rot180_img"):
                 st.session_state.rotation_angle_image = cv2.ROTATE_180
-            if rot4.button("Reset Rotation"):
+            if rot4.button("Reset Rotation", key="rotreset_img"):
                 st.session_state.rotation_angle_image = None
     
     # Convert hex to BGR tuple
@@ -164,7 +164,9 @@ with detection_tab[0]:
     box_color_img = (box_color_img[2], box_color_img[1], box_color_img[0])
     
     # Image upload and processing
-    img_file_buffer = st.file_uploader("Upload an image file with face(s) in it to be analyzed", type=['jpg', 'jpeg', 'png'])
+    img_file_buffer = st.file_uploader("Upload an image file with face(s) in it to be analyzed", 
+                                      type=['jpg', 'jpeg', 'png'], 
+                                      key="img_uploader")
     if img_file_buffer is not None:
         raw_bytes = np.asarray(bytearray(img_file_buffer.read()), dtype=np.uint8)
         image = cv2.imdecode(raw_bytes, cv2.IMREAD_COLOR)
@@ -188,7 +190,11 @@ with detection_tab[0]:
         out_image_pil = Image.fromarray(cv2.cvtColor(out_image, cv2.COLOR_BGR2RGB))
         buf = BytesIO()
         out_image_pil.save(buf, format='JPEG')
-        st.download_button("Download Processed Image", data=buf.getvalue(), file_name="processed_image.jpg", mime="image/jpeg")
+        st.download_button("Download Processed Image", 
+                          data=buf.getvalue(), 
+                          file_name="processed_image.jpg", 
+                          mime="image/jpeg",
+                          key="img_download")
 
 # ---------------------
 # Video Detection Tab
@@ -197,32 +203,32 @@ with detection_tab[1]:
     st.header("Video Face Detection")
     
     # Settings in collapsible expander
-    with st.expander("Video Detection Settings", expanded=False):
+    with st.expander("Video Detection Settings", expanded=False, key="video_settings_expander"):
         col1, col2 = st.columns(2)
         
         with col1:
-            conf_threshold_video = st.slider("Confidence Threshold", 0.0, 1.0, 0.5, 0.01)
-            box_color_video_hex = st.color_picker("Bounding Box Color", "#00FF00")
-            thickness_video = st.slider("Bounding Box Thickness", 1, 10, 4)
+            conf_threshold_video = st.slider("Confidence Threshold", 0.0, 1.0, 0.5, 0.01, key="conf_video")
+            box_color_video_hex = st.color_picker("Bounding Box Color", "#00FF00", key="color_video")
+            thickness_video = st.slider("Bounding Box Thickness", 1, 10, 4, key="thick_video")
         
         with col2:
             # Add mosaic privacy filter option
-            apply_mosaic_video = st.checkbox("Apply Mosaic Filter", False)
+            apply_mosaic_video = st.checkbox("Apply Mosaic Filter", False, key="mosaic_video_check")
             if apply_mosaic_video:
-                mosaic_level_video = st.slider("Mosaic Block Size", 5, 50, 15, 1)
+                mosaic_level_video = st.slider("Mosaic Block Size", 5, 50, 15, 1, key="mosaic_video_level")
             
             # Video rotation controls in sub-columns
             st.subheader("Rotation Options")
             vrot1, vrot2 = st.columns(2)
-            if vrot1.button("Rotate 90° CW"):
+            if vrot1.button("Rotate 90° CW", key="rot90cw_video"):
                 st.session_state.rotation_angle_video = cv2.ROTATE_90_CLOCKWISE
-            if vrot2.button("Rotate 90° CCW"):
+            if vrot2.button("Rotate 90° CCW", key="rot90ccw_video"):
                 st.session_state.rotation_angle_video = cv2.ROTATE_90_COUNTERCLOCKWISE
             
             vrot3, vrot4 = st.columns(2)
-            if vrot3.button("Rotate 180°"):
+            if vrot3.button("Rotate 180°", key="rot180_video"):
                 st.session_state.rotation_angle_video = cv2.ROTATE_180
-            if vrot4.button("Reset Rotation"):
+            if vrot4.button("Reset Rotation", key="rotreset_video"):
                 st.session_state.rotation_angle_video = None
     
     # Convert hex to BGR tuple
@@ -230,7 +236,9 @@ with detection_tab[1]:
     box_color_video = (box_color_video[2], box_color_video[1], box_color_video[0])
     
     # Video upload and processing
-    video_file_buffer = st.file_uploader("Upload a video file with face(s) in it to be analyzed", type=['mp4', 'avi', 'mov'])
+    video_file_buffer = st.file_uploader("Upload a video file with face(s) in it to be analyzed", 
+                                        type=['mp4', 'avi', 'mov'], 
+                                        key="video_uploader")
     if video_file_buffer is not None:
         tfile = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4')
         tfile.write(video_file_buffer.read())
@@ -251,7 +259,7 @@ with detection_tab[1]:
         
         out = cv2.VideoWriter(output_path, fourcc, fps, (out_width, out_height))
         progress_text = st.empty()
-        progress_bar = st.progress(0)
+        progress_bar = st.progress(0, key="video_progress")
         stframe = st.empty()
         frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         current_frame = 0
@@ -263,7 +271,7 @@ with detection_tab[1]:
             current_frame += 1
             progress = int((current_frame / frame_count) * 100)
             progress_text.text(f"Processing video: {progress}%")
-            progress_bar.progress(progress)
+            progress_bar.progress(progress, key="video_progress_update")
             frame = rotate_image(frame, rotation_angle_video)
             detections = detectFaceOpenCVDnn(net, frame)
             processed_frame = process_detections(
@@ -287,7 +295,11 @@ with detection_tab[1]:
         except Exception as e:
             st.error(f"Error deleting temporary file: {e}")
         with open(output_path, "rb") as f:
-            st.download_button("Download Processed Video", f, file_name="processed_video.mp4", mime="video/mp4")
+            st.download_button("Download Processed Video", 
+                              f, 
+                              file_name="processed_video.mp4", 
+                              mime="video/mp4",
+                              key="video_download")
         try:
             os.unlink(output_path)
         except Exception as e:
@@ -300,20 +312,20 @@ with detection_tab[2]:
     st.header("Webcam Face Detection")
     
     # Settings in collapsible expander
-    with st.expander("Webcam Detection Settings", expanded=False):
+    with st.expander("Webcam Detection Settings", expanded=False, key="webcam_settings_expander"):
         col1, col2 = st.columns(2)
         
         with col1:
-            conf_threshold_webcam = st.slider("Confidence Threshold", 0.0, 1.0, 0.5, 0.01)
-            box_color_webcam_hex = st.color_picker("Bounding Box Color", "#00FF00")
-            thickness_webcam = st.slider("Bounding Box Thickness", 1, 10, 4)
-            show_confidence = st.checkbox("Show Confidence Score", True)
+            conf_threshold_webcam = st.slider("Confidence Threshold", 0.0, 1.0, 0.5, 0.01, key="conf_webcam")
+            box_color_webcam_hex = st.color_picker("Bounding Box Color", "#00FF00", key="color_webcam")
+            thickness_webcam = st.slider("Bounding Box Thickness", 1, 10, 4, key="thick_webcam")
+            show_confidence = st.checkbox("Show Confidence Score", True, key="show_conf_webcam")
         
         with col2:
             # Add mosaic privacy filter option
-            apply_mosaic_webcam = st.checkbox("Apply Mosaic Filter", False)
+            apply_mosaic_webcam = st.checkbox("Apply Mosaic Filter", False, key="mosaic_webcam_check")
             if apply_mosaic_webcam:
-                mosaic_level_webcam = st.slider("Mosaic Block Size", 5, 50, 15, 1)
+                mosaic_level_webcam = st.slider("Mosaic Block Size", 5, 50, 15, 1, key="mosaic_webcam_level")
     
     # Convert hex to BGR tuple
     box_color_webcam = tuple(int(box_color_webcam_hex[i:i+2], 16) for i in (1, 3, 5))
@@ -438,11 +450,11 @@ with detection_tab[2]:
         
         face_count = st.session_state.get("face_count", 0)
         if face_count > 0:
-            st.success(f"Number of faces detected: {face_count}")
+            st.success(f"Number of faces detected: {face_count}", key="webcam_face_count")
     
     # User instructions
-    st.info("👆 Click START above to activate your webcam. Make sure to allow camera access when prompted.")
-    st.warning("If you don't see detection boxes, try adjusting the settings in the sidebar.")
+    st.info("👆 Click START above to activate your webcam. Make sure to allow camera access when prompted.", key="webcam_info")
+    st.warning("If you don't see detection boxes, try adjusting the settings in the expandable section above.", key="webcam_warning")
 
 # ---------------------
 # Footer
