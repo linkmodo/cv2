@@ -240,15 +240,39 @@ class FaceDetectionTransformer(VideoTransformerBase):
         
     def transform(self, frame):
         img = frame.to_ndarray(format="bgr24")
-        detections = detectFaceOpenCVDnn(net, img)
-        processed_img = process_detections(
-            img.copy(), 
-            detections, 
-            self.threshold, 
-            self.box_color, 
-            self.thickness
-        )
-        return av.VideoFrame.from_ndarray(processed_img, format="bgr24")
+        
+        # Get current face detections
+        blob = cv2.dnn.blobFromImage(img, 1.0, (300, 300), [104, 117, 123], False, False)
+        net.setInput(blob)
+        detections = net.forward()
+        
+        # Process and draw bounding boxes
+        img_h, img_w = img.shape[:2]
+        for i in range(detections.shape[2]):
+            confidence = detections[0, 0, i, 2]
+            if confidence > self.threshold:
+                x1 = int(detections[0, 0, i, 3] * img_w)
+                y1 = int(detections[0, 0, i, 4] * img_h)
+                x2 = int(detections[0, 0, i, 5] * img_w)
+                y2 = int(detections[0, 0, i, 6] * img_h)
+                
+                # Ensure coordinates are within frame boundaries
+                x1 = max(0, min(x1, img_w - 1))
+                y1 = max(0, min(y1, img_h - 1))
+                x2 = max(0, min(x2, img_w - 1))
+                y2 = max(0, min(y2, img_h - 1))
+                
+                # Draw rectangle
+                cv2.rectangle(img, (x1, y1), (x2, y2), self.box_color, self.thickness, cv2.LINE_8)
+                
+                # Optional: Display confidence score
+                label = f"{confidence:.2f}"
+                label_size, base_line = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+                y1 = max(y1, label_size[1])
+                cv2.rectangle(img, (x1, y1 - label_size[1]), (x1 + label_size[0], y1), self.box_color, cv2.FILLED)
+                cv2.putText(img, label, (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+        
+        return av.VideoFrame.from_ndarray(img, format="bgr24")
 
 # Create the webrtc streamer component
 webrtc_ctx = webrtc_streamer(
@@ -256,8 +280,10 @@ webrtc_ctx = webrtc_streamer(
     video_transformer_factory=FaceDetectionTransformer,
     rtc_configuration=rtc_configuration,
     media_stream_constraints={"video": True, "audio": False},
+    async_processing=True,
 )
 
+# Update the parameters when they change
 if webrtc_ctx.video_transformer:
     webrtc_ctx.video_transformer.threshold = conf_threshold_webcam
     webrtc_ctx.video_transformer.box_color = box_color_webcam
