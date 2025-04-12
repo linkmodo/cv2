@@ -44,7 +44,7 @@ Deep Learning Based Face Detection and Privacy Filter
 
 st.markdown("""
 <h3 style="text-align: center; color: white; font-size: 20px;">
-This application detects face(s) in any images, videos, or through livestreaming from your webcam using OpenCV's deep learning model.<br>
+This application detects face(s) in any images, videos, or through livestreaming from your webcam using OpenCV's deep learning model. Additionally, this app allows you to add a privacy filter to all detected faces in images, videos or though livestreaming from your webcam.<br>
 </h3>
 """, unsafe_allow_html=True)
 
