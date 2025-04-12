@@ -48,24 +48,6 @@ A Streamlit application that uses OpenCV's deep learning model to detect faces i
 - streamlit-webrtc
 - av
 
-## Installation
-
-1. Clone this repository:
-   ```
-   git clone https://github.com/yourusername/face-detection-app.git
-   cd face-detection-app
-   ```
-
-2. Install the required packages:
-   ```
-   pip install -r requirements.txt
-   ```
-
-3. Run the application:
-   ```
-   streamlit run app.py
-   ```
-
 ## Model Details
 
 This application uses the OpenCV DNN face detector model:
