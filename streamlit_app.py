@@ -13,7 +13,7 @@ import threading
 # ---------------------
 # Page Configuration & Styling
 # ---------------------
-st.set_page_config(page_title="Deep Learning Face Detection Model using OpenCV", layout="wide")
+st.set_page_config(page_title="Deep Learning Based Face Detection and Privacy Filter", layout="wide")
 st.markdown(
     """
     <style>
@@ -38,14 +38,13 @@ st.markdown("""
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     color: black;">
-Deep Learning Based Face Detection
+Deep Learning Based Face Detection and Privacy Filter
 </h1>
 """, unsafe_allow_html=True)
 
 st.markdown("""
 <h3 style="text-align: center; color: white; font-size: 20px;">
-This app detects face(s) in images and videos using OpenCV's deep learning model.<br>
-*This app does NOT save any user data after exiting*
+This application detects face(s) in any images, videos, or through livestreaming from your webcam using OpenCV's deep learning model.<br>
 </h3>
 """, unsafe_allow_html=True)
 
@@ -135,15 +134,15 @@ with detection_tab[0]:
         col1, col2 = st.columns(2)
         
         with col1:
-            conf_threshold_img = st.slider("Confidence Threshold", 0.0, 1.0, 0.5, 0.01, key="conf_img")
+            conf_threshold_img = st.slider("Confidence Threshold", 0.0, 1.0, 0.70, 0.01, key="conf_img")
             box_color_hex = st.color_picker("Bounding Box Color", "#00FF00", key="color_img")
-            thickness_img = st.slider("Bounding Box Thickness", 1, 10, 4, key="thick_img")
+            thickness_img = st.slider("Bounding Box Thickness", 1, 20, 8, key="thick_img")
         
         with col2:
             # Add mosaic privacy filter option
-            apply_mosaic_img = st.checkbox("Apply Mosaic Filter", False, key="apply_mosaic_img")
+            apply_mosaic_img = st.checkbox("Apply Privacy Filter", False, key="apply_mosaic_img")
             if apply_mosaic_img:
-                mosaic_level_img = st.slider("Mosaic Block Size", 5, 50, 15, 1, key="mosaic_level_img")
+                mosaic_level_img = st.slider("Mosaic Block Size", 5, 50, 18, 1, key="mosaic_level_img")
                 
             # Image rotation controls in sub-columns
             st.subheader("Rotation Options")
@@ -207,15 +206,15 @@ with detection_tab[1]:
         col1, col2 = st.columns(2)
         
         with col1:
-            conf_threshold_video = st.slider("Confidence Threshold", 0.0, 1.0, 0.5, 0.01, key="conf_video")
+            conf_threshold_video = st.slider("Confidence Threshold", 0.0, 1.0, 0.70, 0.01, key="conf_video")
             box_color_video_hex = st.color_picker("Bounding Box Color", "#00FF00", key="color_video")
-            thickness_video = st.slider("Bounding Box Thickness", 1, 10, 4, key="thick_video")
+            thickness_video = st.slider("Bounding Box Thickness", 1, 20, 8, key="thick_video")
         
         with col2:
             # Add mosaic privacy filter option
-            apply_mosaic_video = st.checkbox("Apply Mosaic Filter", False, key="apply_mosaic_video")
+            apply_mosaic_video = st.checkbox("Apply Privacy Filter", False, key="apply_mosaic_video")
             if apply_mosaic_video:
-                mosaic_level_video = st.slider("Mosaic Block Size", 5, 50, 15, 1, key="mosaic_level_video")
+                mosaic_level_video = st.slider("Mosaic Block Size", 5, 50, 18, 1, key="mosaic_level_video")
             
             # Video rotation controls in sub-columns
             st.subheader("Rotation Options")
@@ -315,16 +314,16 @@ with detection_tab[2]:
         col1, col2 = st.columns(2)
         
         with col1:
-            conf_threshold_webcam = st.slider("Confidence Threshold", 0.0, 1.0, 0.5, 0.01, key="conf_webcam")
+            conf_threshold_webcam = st.slider("Confidence Threshold", 0.0, 1.0, 0.70, 0.01, key="conf_webcam")
             box_color_webcam_hex = st.color_picker("Bounding Box Color", "#00FF00", key="color_webcam")
-            thickness_webcam = st.slider("Bounding Box Thickness", 1, 10, 4, key="thick_webcam")
+            thickness_webcam = st.slider("Bounding Box Thickness", 1, 20, 8, key="thick_webcam")
             show_confidence = st.checkbox("Show Confidence Score", True, key="show_conf")
         
         with col2:
             # Add mosaic privacy filter option
-            apply_mosaic_webcam = st.checkbox("Apply Mosaic Filter", False, key="apply_mosaic_webcam")
+            apply_mosaic_webcam = st.checkbox("Apply Privacy Filter", False, key="apply_mosaic_webcam")
             if apply_mosaic_webcam:
-                mosaic_level_webcam = st.slider("Mosaic Block Size", 5, 50, 15, 1, key="mosaic_level_webcam")
+                mosaic_level_webcam = st.slider("Mosaic Block Size", 5, 50, 18, 1, key="mosaic_level_webcam")
     
     # Convert hex to BGR tuple
     box_color_webcam = tuple(int(box_color_webcam_hex[i:i+2], 16) for i in (1, 3, 5))
