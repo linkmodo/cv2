@@ -70,8 +70,7 @@ def detectFaceOpenCVDnn(net, frame):
     detections = net.forward()
     return detections
 
-def process_detections(frame, detections, conf_threshold=0.5, box_color=(0, 255, 0), thickness=2, 
-                       blur_faces=False, blur_method="none", blur_intensity=15, solid_color=None):
+def process_detections(frame, detections, conf_threshold=0.5, box_color=(0, 255, 0), thickness=2, apply_mosaic=False, mosaic_level=10):
     frame_h, frame_w = frame.shape[:2]
     for i in range(detections.shape[2]):
         confidence = detections[0, 0, i, 2]
@@ -87,32 +86,19 @@ def process_detections(frame, detections, conf_threshold=0.5, box_color=(0, 255,
             x2 = max(0, min(x2, frame_w - 1))
             y2 = max(0, min(y2, frame_h - 1))
             
-            # Apply blurring/masking if requested
-            if blur_faces and blur_method != "none":
+            # Apply mosaic blur if requested
+            if apply_mosaic and x2 > x1 and y2 > y1:
                 face_roi = frame[y1:y2, x1:x2].copy()
+                # Apply pixelation effect (mosaic blur)
+                h, w = face_roi.shape[:2]
+                # Reduce size to create pixelation effect
+                temp = cv2.resize(face_roi, (max(1, w // mosaic_level), max(1, h // mosaic_level)), 
+                                 interpolation=cv2.INTER_LINEAR)
+                # Resize back to original size with nearest neighbor to maintain blocks
+                pixelated = cv2.resize(temp, (w, h), interpolation=cv2.INTER_NEAREST)
+                frame[y1:y2, x1:x2] = pixelated
                 
-                if blur_method == "gaussian":
-                    # Apply Gaussian blur
-                    blurred_face = cv2.GaussianBlur(face_roi, (blur_intensity, blur_intensity), 0)
-                    frame[y1:y2, x1:x2] = blurred_face
-                
-                elif blur_method == "pixel":
-                    # Apply pixelation effect
-                    h, w = face_roi.shape[:2]
-                    # Reduce size to create pixelation effect
-                    temp = cv2.resize(face_roi, (max(1, w // blur_intensity), max(1, h // blur_intensity)), 
-                                     interpolation=cv2.INTER_LINEAR)
-                    # Resize back to original size with nearest neighbor to maintain blocks
-                    pixelated = cv2.resize(temp, (w, h), interpolation=cv2.INTER_NEAREST)
-                    frame[y1:y2, x1:x2] = pixelated
-                
-                elif blur_method == "solid" and solid_color is not None:
-                    # Replace with solid color
-                    frame[y1:y2, x1:x2] = solid_color
-            
-            # Draw bounding box
             cv2.rectangle(frame, (x1, y1), (x2, y2), box_color, thickness, cv2.LINE_8)
-    
     return frame
 
 def rotate_image(image, angle):
@@ -132,171 +118,45 @@ if 'rotation_angle_image' not in st.session_state:
     st.session_state.rotation_angle_image = None
 if 'rotation_angle_video' not in st.session_state:
     st.session_state.rotation_angle_video = None
-if 'current_tab' not in st.session_state:
-    st.session_state.current_tab = 0
 
 # ---------------------
 # Main Content Area with Tabs
 # ---------------------
-tab1, tab2, tab3 = st.tabs(["Image", "Video", "Webcam"])
-
-# Keep track of which tab is selected
-if tab1.selectbox('Hidden selectbox for detecting tab 1 selection', [''], key='tab1_select', label_visibility="collapsed"):
-    st.session_state.current_tab = 0
-if tab2.selectbox('Hidden selectbox for detecting tab 2 selection', [''], key='tab2_select', label_visibility="collapsed"):
-    st.session_state.current_tab = 1
-if tab3.selectbox('Hidden selectbox for detecting tab 3 selection', [''], key='tab3_select', label_visibility="collapsed"):
-    st.session_state.current_tab = 2
-
-# Sidebar settings
-with st.sidebar:
-    st.title("Face Detection Options")
-    
-    # Image settings - only show when Image tab is active
-    if st.session_state.current_tab == 0:
-        st.header("Image Detection Settings")
-        conf_threshold_img = st.slider("Confidence Threshold (Image)", 0.0, 1.0, 0.5, 0.01)
-        box_color_hex = st.color_picker("Bounding Box Color (Image)", "#00FF00")
-        thickness_img = st.slider("Bounding Box Thickness (Image)", 1, 10, 4)
-        box_color_img = tuple(int(box_color_hex[i:i+2], 16) for i in (1, 3, 5))
-        box_color_img = (box_color_img[2], box_color_img[1], box_color_img[0])
-        
-        # Face blur options for image
-        with st.expander("Face Privacy Options", expanded=False):
-            blur_faces_img = st.checkbox("Apply Privacy Filter", False, key="blur_faces_img")
-            if blur_faces_img:
-                blur_method_img = st.radio("Privacy Method", 
-                                      ["none", "gaussian", "pixel", "solid"], 
-                                      index=0, key="blur_method_img",
-                                      horizontal=True)
-                
-                if blur_method_img == "gaussian":
-                    blur_intensity_img = st.slider("Blur Intensity", 1, 99, 15, 2, key="gaussian_img")
-                    blur_intensity_img = blur_intensity_img * 2 + 1  # Must be odd for Gaussian
-                
-                elif blur_method_img == "pixel":
-                    blur_intensity_img = st.slider("Pixelation Level", 1, 30, 10, key="pixel_img")
-                
-                elif blur_method_img == "solid":
-                    solid_color_hex_img = st.color_picker("Solid Color", "#000000", key="solid_img")
-                    solid_color_img = tuple(int(solid_color_hex_img[i:i+2], 16) for i in (1, 3, 5))
-                    solid_color_img = (solid_color_img[2], solid_color_img[1], solid_color_img[0])
-                else:
-                    blur_intensity_img = 15
-                    solid_color_img = (0, 0, 0)
-            else:
-                blur_method_img = "none"
-                blur_intensity_img = 15
-                solid_color_img = (0, 0, 0)
-        
-        # Image rotation controls
-        with st.expander("Rotation Options", expanded=False):
-            r1, r2 = st.columns(2)
-            r3, r4 = st.columns(2)
-            if r1.button("Rotate 90° CW (Image)"):
-                st.session_state.rotation_angle_image = cv2.ROTATE_90_CLOCKWISE
-            if r2.button("Rotate 90° CCW (Image)"):
-                st.session_state.rotation_angle_image = cv2.ROTATE_90_COUNTERCLOCKWISE
-            if r3.button("Rotate 180° (Image)"):
-                st.session_state.rotation_angle_image = cv2.ROTATE_180
-            if r4.button("Reset (Image)"):
-                st.session_state.rotation_angle_image = None
-    
-    # Video settings - only show when Video tab is active
-    elif st.session_state.current_tab == 1:
-        st.header("Video Detection Settings")
-        conf_threshold_video = st.slider("Confidence Threshold (Video)", 0.0, 1.0, 0.5, 0.01)
-        box_color_video_hex = st.color_picker("Bounding Box Color (Video)", "#00FF00")
-        thickness_video = st.slider("Bounding Box Thickness (Video)", 1, 10, 4)
-        box_color_video = tuple(int(box_color_video_hex[i:i+2], 16) for i in (1, 3, 5))
-        box_color_video = (box_color_video[2], box_color_video[1], box_color_video[0])
-        
-        # Face blur options for video
-        with st.expander("Face Privacy Options", expanded=False):
-            blur_faces_video = st.checkbox("Apply Privacy Filter", False, key="blur_faces_video")
-            if blur_faces_video:
-                blur_method_video = st.radio("Privacy Method", 
-                                        ["none", "gaussian", "pixel", "solid"], 
-                                        index=0, key="blur_method_video",
-                                        horizontal=True)
-                
-                if blur_method_video == "gaussian":
-                    blur_intensity_video = st.slider("Blur Intensity", 1, 99, 15, 2, key="gaussian_video")
-                    blur_intensity_video = blur_intensity_video * 2 + 1  # Must be odd for Gaussian
-                
-                elif blur_method_video == "pixel":
-                    blur_intensity_video = st.slider("Pixelation Level", 1, 30, 10, key="pixel_video")
-                
-                elif blur_method_video == "solid":
-                    solid_color_hex_video = st.color_picker("Solid Color", "#000000", key="solid_video")
-                    solid_color_video = tuple(int(solid_color_hex_video[i:i+2], 16) for i in (1, 3, 5))
-                    solid_color_video = (solid_color_video[2], solid_color_video[1], solid_color_video[0])
-                else:
-                    blur_intensity_video = 15
-                    solid_color_video = (0, 0, 0)
-            else:
-                blur_method_video = "none"
-                blur_intensity_video = 15
-                solid_color_video = (0, 0, 0)
-        
-        # Video rotation controls
-        with st.expander("Rotation Options", expanded=False):
-            vr1, vr2 = st.columns(2)
-            vr3, vr4 = st.columns(2)
-            if vr1.button("Rotate 90° CW (Video)"):
-                st.session_state.rotation_angle_video = cv2.ROTATE_90_CLOCKWISE
-            if vr2.button("Rotate 90° CCW (Video)"):
-                st.session_state.rotation_angle_video = cv2.ROTATE_90_COUNTERCLOCKWISE
-            if vr3.button("Rotate 180° (Video)"):
-                st.session_state.rotation_angle_video = cv2.ROTATE_180
-            if vr4.button("Reset (Video)"):
-                st.session_state.rotation_angle_video = None
-    
-    # Webcam settings - only show when Webcam tab is active
-    elif st.session_state.current_tab == 2:
-        st.header("Webcam Detection Settings")
-        conf_threshold_webcam = st.slider("Confidence Threshold (Webcam)", 0.0, 1.0, 0.5, 0.01)
-        box_color_webcam_hex = st.color_picker("Bounding Box Color (Webcam)", "#00FF00")
-        thickness_webcam = st.slider("Bounding Box Thickness (Webcam)", 1, 10, 4)
-        box_color_webcam = tuple(int(box_color_webcam_hex[i:i+2], 16) for i in (1, 3, 5))
-        box_color_webcam = (box_color_webcam[2], box_color_webcam[1], box_color_webcam[0])
-        
-        with st.expander("Display Options", expanded=False):
-            show_confidence = st.checkbox("Show Confidence Score", True)
-        
-        # Face blur options for webcam
-        with st.expander("Face Privacy Options", expanded=False):
-            blur_faces_webcam = st.checkbox("Apply Privacy Filter", False, key="blur_faces_webcam")
-            if blur_faces_webcam:
-                blur_method_webcam = st.radio("Privacy Method", 
-                                         ["none", "gaussian", "pixel", "solid"], 
-                                         index=0, key="blur_method_webcam",
-                                         horizontal=True)
-                
-                if blur_method_webcam == "gaussian":
-                    blur_intensity_webcam = st.slider("Blur Intensity", 1, 99, 15, 2, key="gaussian_webcam")
-                    blur_intensity_webcam = blur_intensity_webcam * 2 + 1  # Must be odd for Gaussian
-                
-                elif blur_method_webcam == "pixel":
-                    blur_intensity_webcam = st.slider("Pixelation Level", 1, 30, 10, key="pixel_webcam")
-                
-                elif blur_method_webcam == "solid":
-                    solid_color_hex_webcam = st.color_picker("Solid Color", "#000000", key="solid_webcam")
-                    solid_color_webcam = tuple(int(solid_color_hex_webcam[i:i+2], 16) for i in (1, 3, 5))
-                    solid_color_webcam = (solid_color_webcam[2], solid_color_webcam[1], solid_color_webcam[0])
-                else:
-                    blur_intensity_webcam = 15
-                    solid_color_webcam = (0, 0, 0)
-            else:
-                blur_method_webcam = "none"
-                blur_intensity_webcam = 15
-                solid_color_webcam = (0, 0, 0)
+detection_tab = st.tabs(["Image", "Video", "Webcam"])
 
 # ---------------------
 # Image Detection Tab
 # ---------------------
-with tab1:
+with detection_tab[0]:
     st.header("Image Face Detection")
+    
+    # Sidebar settings for Image
+    with st.sidebar:
+        st.header("Image Detection Settings")
+        conf_threshold_img = st.slider("Confidence Threshold (Image)", 0.0, 1.0, 0.5, 0.01)
+        box_color_hex = st.color_picker("Bounding Box Color (Image)", "#00FF00")
+        thickness_img = st.slider("Bounding Box Thickness (Image)", 1, 10, 4)
+        # Convert hex to BGR tuple
+        box_color_img = tuple(int(box_color_hex[i:i+2], 16) for i in (1, 3, 5))
+        box_color_img = (box_color_img[2], box_color_img[1], box_color_img[0])
+        
+        # Add mosaic privacy filter option
+        st.subheader("Privacy Filter")
+        apply_mosaic_img = st.checkbox("Apply Mosaic Filter (Image)", False)
+        if apply_mosaic_img:
+            mosaic_level_img = st.slider("Mosaic Block Size (Image)", 5, 50, 15, 1)
+        
+        # Image rotation controls
+        st.subheader("Rotation Options")
+        r1, r2, r3, r4 = st.columns(4)
+        if r1.button("Rotate 90° CW (Image)"):
+            st.session_state.rotation_angle_image = cv2.ROTATE_90_CLOCKWISE
+        if r2.button("Rotate 90° CCW (Image)"):
+            st.session_state.rotation_angle_image = cv2.ROTATE_90_COUNTERCLOCKWISE
+        if r3.button("Rotate 180° (Image)"):
+            st.session_state.rotation_angle_image = cv2.ROTATE_180
+        if r4.button("Reset (Image)"):
+            st.session_state.rotation_angle_image = None
     
     # Image upload and processing
     img_file_buffer = st.file_uploader("Upload an image file with face(s) in it to be analyzed", type=['jpg', 'jpeg', 'png'])
@@ -315,10 +175,8 @@ with tab1:
             conf_threshold_img, 
             box_color_img, 
             thickness_img,
-            blur_faces_img,
-            blur_method_img,
-            blur_intensity_img,
-            solid_color_img if blur_method_img == "solid" else None
+            apply_mosaic_img,
+            mosaic_level_img if apply_mosaic_img else 10
         )
         
         col2.image(out_image, channels='BGR', caption="Output Image")
@@ -330,8 +188,35 @@ with tab1:
 # ---------------------
 # Video Detection Tab
 # ---------------------
-with tab2:
+with detection_tab[1]:
     st.header("Video Face Detection")
+    
+    # Sidebar settings for Video
+    with st.sidebar:
+        st.header("Video Detection Settings")
+        conf_threshold_video = st.slider("Confidence Threshold (Video)", 0.0, 1.0, 0.5, 0.01)
+        box_color_video_hex = st.color_picker("Bounding Box Color (Video)", "#00FF00")
+        thickness_video = st.slider("Bounding Box Thickness (Video)", 1, 10, 4)
+        box_color_video = tuple(int(box_color_video_hex[i:i+2], 16) for i in (1, 3, 5))
+        box_color_video = (box_color_video[2], box_color_video[1], box_color_video[0])
+        
+        # Add mosaic privacy filter option
+        st.subheader("Privacy Filter")
+        apply_mosaic_video = st.checkbox("Apply Mosaic Filter (Video)", False)
+        if apply_mosaic_video:
+            mosaic_level_video = st.slider("Mosaic Block Size (Video)", 5, 50, 15, 1)
+        
+        # Video rotation controls
+        st.subheader("Rotation Options")
+        vr1, vr2, vr3, vr4 = st.columns(4)
+        if vr1.button("Rotate 90° CW (Video)"):
+            st.session_state.rotation_angle_video = cv2.ROTATE_90_CLOCKWISE
+        if vr2.button("Rotate 90° CCW (Video)"):
+            st.session_state.rotation_angle_video = cv2.ROTATE_90_COUNTERCLOCKWISE
+        if vr3.button("Rotate 180° (Video)"):
+            st.session_state.rotation_angle_video = cv2.ROTATE_180
+        if vr4.button("Reset (Video)"):
+            st.session_state.rotation_angle_video = None
     
     # Video upload and processing
     video_file_buffer = st.file_uploader("Upload a video file with face(s) in it to be analyzed", type=['mp4', 'avi', 'mov'])
@@ -376,10 +261,8 @@ with tab2:
                 conf_threshold_video, 
                 box_color_video, 
                 thickness_video,
-                blur_faces_video,
-                blur_method_video,
-                blur_intensity_video,
-                solid_color_video if blur_method_video == "solid" else None
+                apply_mosaic_video,
+                mosaic_level_video if apply_mosaic_video else 10
             )
             out.write(processed_frame)
             stframe.image(processed_frame, channels="BGR")
@@ -402,8 +285,25 @@ with tab2:
 # ---------------------
 # Webcam Detection Tab
 # ---------------------
-with tab3:
+with detection_tab[2]:
     st.header("Webcam Face Detection")
+    
+    # Sidebar settings for Webcam
+    with st.sidebar:
+        st.header("Webcam Detection Settings")
+        conf_threshold_webcam = st.slider("Confidence Threshold (Webcam)", 0.0, 1.0, 0.5, 0.01)
+        box_color_webcam_hex = st.color_picker("Bounding Box Color (Webcam)", "#00FF00")
+        thickness_webcam = st.slider("Bounding Box Thickness (Webcam)", 1, 10, 4)
+        # Convert hex to BGR tuple
+        box_color_webcam = tuple(int(box_color_webcam_hex[i:i+2], 16) for i in (1, 3, 5))
+        box_color_webcam = (box_color_webcam[2], box_color_webcam[1], box_color_webcam[0])
+        show_confidence = st.checkbox("Show Confidence Score", True)
+        
+        # Add mosaic privacy filter option
+        st.subheader("Privacy Filter")
+        apply_mosaic_webcam = st.checkbox("Apply Mosaic Filter (Webcam)", False)
+        if apply_mosaic_webcam:
+            mosaic_level_webcam = st.slider("Mosaic Block Size (Webcam)", 5, 50, 15, 1)
     
     # Define RTC configuration with free STUN servers
     rtc_configuration = RTCConfiguration(
@@ -422,12 +322,9 @@ with tab3:
             self._model = net
             self.frame_lock = threading.Lock()
             self.in_progress = False
-            
-            # Privacy options
-            self.blur_faces = blur_faces_webcam
-            self.blur_method = blur_method_webcam
-            self.blur_intensity = blur_intensity_webcam
-            self.solid_color = solid_color_webcam if blur_method_webcam == "solid" else None
+            # Privacy filter
+            self.apply_mosaic = apply_mosaic_webcam
+            self.mosaic_level = mosaic_level_webcam if apply_mosaic_webcam else 10
         
         def _detect_faces(self, frame: av.VideoFrame) -> np.ndarray:
             img = frame.to_ndarray(format="bgr24")
@@ -437,7 +334,7 @@ with tab3:
             self._model.setInput(blob)
             detections = self._model.forward()
             
-            # Process detections and apply privacy options
+            # Draw bounding boxes
             img_h, img_w = img.shape[:2]
             detected_faces = []
             
@@ -458,28 +355,17 @@ with tab3:
                     # Store detected face
                     detected_faces.append((x1, y1, x2, y2, confidence))
                     
-                    # Apply privacy filter if enabled
-                    if self.blur_faces and self.blur_method != "none":
+                    # Apply mosaic if requested
+                    if self.apply_mosaic and x2 > x1 and y2 > y1:
                         face_roi = img[y1:y2, x1:x2].copy()
-                        
-                        if self.blur_method == "gaussian":
-                            # Apply Gaussian blur
-                            blurred_face = cv2.GaussianBlur(face_roi, (self.blur_intensity, self.blur_intensity), 0)
-                            img[y1:y2, x1:x2] = blurred_face
-                        
-                        elif self.blur_method == "pixel":
-                            # Apply pixelation effect
-                            h, w = face_roi.shape[:2]
-                            # Reduce size to create pixelation effect
-                            temp = cv2.resize(face_roi, (max(1, w // self.blur_intensity), max(1, h // self.blur_intensity)), 
-                                             interpolation=cv2.INTER_LINEAR)
-                            # Resize back to original size with nearest neighbor to maintain blocks
-                            pixelated = cv2.resize(temp, (w, h), interpolation=cv2.INTER_NEAREST)
-                            img[y1:y2, x1:x2] = pixelated
-                        
-                        elif self.blur_method == "solid" and self.solid_color is not None:
-                            # Replace with solid color
-                            img[y1:y2, x1:x2] = self.solid_color
+                        # Apply pixelation effect (mosaic blur)
+                        h, w = face_roi.shape[:2]
+                        # Reduce size to create pixelation effect
+                        temp = cv2.resize(face_roi, (max(1, w // self.mosaic_level), max(1, h // self.mosaic_level)), 
+                                         interpolation=cv2.INTER_LINEAR)
+                        # Resize back to original size with nearest neighbor to maintain blocks
+                        pixelated = cv2.resize(temp, (w, h), interpolation=cv2.INTER_NEAREST)
+                        img[y1:y2, x1:x2] = pixelated
                     
                     # Draw rectangle
                     cv2.rectangle(img, (x1, y1), (x2, y2), self.box_color, self.thickness, cv2.LINE_8)
@@ -508,12 +394,9 @@ with tab3:
             self.box_color = box_color_webcam
             self.thickness = thickness_webcam
             self.show_confidence = show_confidence
-            
-            # Update privacy settings
-            self.blur_faces = blur_faces_webcam
-            self.blur_method = blur_method_webcam
-            self.blur_intensity = blur_intensity_webcam
-            self.solid_color = solid_color_webcam if blur_method_webcam == "solid" else None
+            # Update privacy filter settings
+            self.apply_mosaic = apply_mosaic_webcam
+            self.mosaic_level = mosaic_level_webcam if apply_mosaic_webcam else 10
             
             # Process the frame
             img = self._detect_faces(frame)
