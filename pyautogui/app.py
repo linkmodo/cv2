@@ -2,7 +2,18 @@ import streamlit as st
 import time
 import sys
 import platform
+import os
 import pyautogui
+
+# ========== DISPLAY ENVIRONMENT FIX ==========
+if platform.system() != 'Windows' and 'DISPLAY' not in os.environ:
+    os.environ['DISPLAY'] = ':0.0'
+
+try:
+    import pyautogui
+except Exception as e:
+    st.error(f"PyAutoGUI initialization failed: {str(e)}")
+    st.stop()
 
 # ========== CONFIGURATION ==========
 # Safety settings
@@ -10,7 +21,7 @@ try:
     pyautogui.FAILSAFE = True
     pyautogui.PAUSE = 0.1
 except Exception as e:
-    st.error(f"PyAutoGUI initialization failed: {str(e)}")
+    st.error(f"PyAutoGUI configuration failed: {str(e)}")
     st.stop()
 
 # Platform detection
