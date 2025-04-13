@@ -1,75 +1,97 @@
-# app.py
 import streamlit as st
-import pyautogui
 import time
+import sys
 import platform
-import keyboard
+import pyautogui
 
-# Safety configuration
-pyautogui.PAUSE = 0.5
+# ========== CONFIGURATION ==========
+# Safety settings
 pyautogui.FAILSAFE = True
-stop_drawing = False
+pyautogui.PAUSE = 0.1
 
 # Platform detection
 IS_MAC = 'mac' in platform.platform().lower()
 HOTKEY_MOD = 'command' if IS_MAC else 'ctrl'
 
+# Timing parameters
+DEFAULT_DELAY = 0.5
+FOCUS_DELAY = 1.0
+TYPE_INTERVAL = 0.01
+
+def safe_automation(func):
+    """Decorator for adding error handling to automation functions."""
+    def wrapper(*args, **kwargs):
+        try:
+            # Verify screen resolution
+            screen_width, screen_height = pyautogui.size()
+            if screen_width < 1024 or screen_height < 768:
+                raise ValueError("Screen resolution too small for reliable automation")
+                
+            return func(*args, **kwargs)
+            
+        except pyautogui.FailSafeException:
+            st.error("Emergency stop triggered!")
+            sys.exit(1)
+            
+        except Exception as e:
+            st.error(f"Automation failed: {str(e)}")
+            sys.exit(1)
+            
+    return wrapper
+
+@safe_automation
+def open_new_tab():
+    """Open a new browser tab."""
+    with st.spinner("Opening new tab..."):
+        pyautogui.hotkey(HOTKEY_MOD, 't')
+        time.sleep(FOCUS_DELAY)
+
+@safe_automation
+def navigate_to_url(url):
+    """Navigate to specified URL in browser."""
+    with st.spinner(f"Navigating to {url}..."):
+        pyautogui.hotkey(HOTKEY_MOD, 'l')
+        time.sleep(0.2)
+        pyautogui.write(url, interval=TYPE_INTERVAL)
+        time.sleep(0.1)
+        pyautogui.press('enter')
+        time.sleep(FOCUS_DELAY)
+
+@safe_automation
+def draw_spiral():
+    """Draw a shrinking spiral."""
+    with st.spinner("Drawing spiral (move mouse to top-left to abort)..."):
+        time.sleep(DEFAULT_DELAY)
+        distance = 200
+        while distance > 0:
+            pyautogui.drag(distance, 0, button='left', duration=0.2)
+            distance -= 5
+            pyautogui.drag(0, distance, button='left', duration=0.2)
+            distance -= 5
+            pyautogui.drag(-distance, 0, button='left', duration=0.2)
+            distance -= 5
+            pyautogui.drag(0, -distance, button='left', duration=0.2)
+            distance -= 5
+
 def main():
-    st.title("PyAutoGUI Web Controller")
-    st.warning("Use with caution! This controls your actual mouse/keyboard.")
+    st.title("HCI Automation Controller")
+    st.warning("WARNING: This app controls your actual mouse and keyboard!")
     
-    tab1, tab2, tab3 = st.tabs(["Browser Control", "Mouse Demo", "Keyboard Demo"])
+    tab1, tab2 = st.tabs(["Browser Control", "Mouse Demo"])
     
     with tab1:
         st.header("Browser Automation")
-        url = st.text_input("Enter URL:", "[https://pyautogui.readthedocs.io](https://pyautogui.readthedocs.io)")
-        if st.button("Open in Browser"):
-            with st.spinner("Opening browser..."):
-                try:
-                    pyautogui.hotkey(HOTKEY_MOD, 't')
-                    time.sleep(1)
-                    pyautogui.write(url)
-                    pyautogui.press('enter')
-                    st.success("Done!")
-                except Exception as e:
-                    st.error(f"Error: {str(e)}")
+        url = st.text_input("Enter URL:", "https://pyautogui.readthedocs.io")
+        if st.button("Open URL"):
+            open_new_tab()
+            navigate_to_url(url)
+            st.success("Done!")
     
     with tab2:
-        st.header("Mouse Control")
+        st.header("Mouse Drawing")
         if st.button("Draw Spiral"):
-            stop_drawing = False  # Reset flag
-            with st.spinner("Drawing (Press ESC to stop)..."):
-                try:
-                    time.sleep(3)  # Give time to switch to drawing app
-                    distance = 200
-                    while distance > 0 and not stop_drawing:
-                        if keyboard.is_pressed('esc'):
-                            stop_drawing = True
-                            break
-                        pyautogui.drag(distance, 0, duration=0.2)
-                        distance -= 5
-                        pyautogui.drag(0, distance, duration=0.2)
-                        distance -= 5
-                    if stop_drawing:
-                        st.warning("Drawing stopped by user!")
-                    else:
-                        st.success("Drawing complete!")
-                except pyautogui.FailSafeException:
-                    st.error("Emergency stop triggered!")
-                except Exception as e:
-                    st.error(f"Error: {str(e)}")
-    
-    with tab3:
-        st.header("Keyboard Input")
-        text = st.text_input("Text to type:")
-        if st.button("Type Text"):
-            with st.spinner("Typing..."):
-                try:
-                    time.sleep(3)  # Give time to focus window
-                    pyautogui.write(text, interval=0.1)
-                    st.success("Typing complete!")
-                except Exception as e:
-                    st.error(f"Error: {str(e)}")
+            draw_spiral()
+            st.success("Drawing complete!")
 
 if __name__ == "__main__":
     main()
