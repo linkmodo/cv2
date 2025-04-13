@@ -1,11 +1,8 @@
-import streamlit as st
-import time
-import sys
-import platform
 import os
-import pyautogui
+import platform
 
 # ========== DISPLAY ENVIRONMENT FIX ==========
+# Set DISPLAY env variable before importing pyautogui (only for non-Windows environments)
 if platform.system() != 'Windows' and 'DISPLAY' not in os.environ:
     os.environ['DISPLAY'] = ':0.0'
 
@@ -14,6 +11,12 @@ try:
 except Exception as e:
     st.error(f"PyAutoGUI initialization failed: {str(e)}")
     st.stop()
+
+import streamlit as st
+import time
+import sys
+import pyautogui  # Now imported after DISPLAY is set
+
 
 # ========== CONFIGURATION ==========
 # Safety settings
