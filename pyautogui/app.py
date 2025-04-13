@@ -6,12 +6,20 @@ import pyautogui
 
 # ========== CONFIGURATION ==========
 # Safety settings
-pyautogui.FAILSAFE = True
-pyautogui.PAUSE = 0.1
+try:
+    pyautogui.FAILSAFE = True
+    pyautogui.PAUSE = 0.1
+except Exception as e:
+    st.error(f"PyAutoGUI initialization failed: {str(e)}")
+    st.stop()
 
 # Platform detection
-IS_MAC = 'mac' in platform.platform().lower()
-HOTKEY_MOD = 'command' if IS_MAC else 'ctrl'
+try:
+    IS_MAC = 'mac' in platform.platform().lower()
+    HOTKEY_MOD = 'command' if IS_MAC else 'ctrl'
+except Exception as e:
+    st.error(f"Platform detection failed: {str(e)}")
+    st.stop()
 
 # Timing parameters
 DEFAULT_DELAY = 0.5
