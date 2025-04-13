@@ -8,9 +8,6 @@ if platform.system() != 'Windows' and 'DISPLAY' not in os.environ:
 
 try:
     import pyautogui
-except Exception as e:
-    st.error(f"PyAutoGUI initialization failed: {str(e)}")
-    st.stop()
 
 import streamlit as st
 import time
