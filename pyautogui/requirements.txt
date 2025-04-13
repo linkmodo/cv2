@@ -1,3 +1,4 @@
 streamlit==1.33.0
 pyautogui==0.9.54
 keyboard==0.13.5
+platformdirs==4.2.0
