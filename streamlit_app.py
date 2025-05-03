@@ -130,6 +130,12 @@ if 'filter_type_img' not in st.session_state:
     st.session_state.filter_type_img = "Mosaic"
 if 'filter_type_video' not in st.session_state:
     st.session_state.filter_type_video = "Mosaic"
+if 'mosaic_level_webcam' not in st.session_state:
+    st.session_state.mosaic_level_webcam = 18
+if 'mosaic_level_img' not in st.session_state:
+    st.session_state.mosaic_level_img = 18
+if 'mosaic_level_video' not in st.session_state:
+    st.session_state.mosaic_level_video = 18
 
 # ---------------------
 # Main Content Area with Tabs
@@ -161,7 +167,7 @@ with detection_tab[0]:
                                      key="filter_type_webcam",
                                      index=0 if st.session_state.filter_type_webcam == "Mosaic" else 1)
                 if filter_type == "Mosaic":
-                    mosaic_level_webcam = st.slider("Mosaic Block Size", 5, 50, 18, 1, key="mosaic_level_webcam")
+                    st.session_state.mosaic_level_webcam = st.slider("Mosaic Block Size", 5, 50, st.session_state.mosaic_level_webcam, 1, key="mosaic_level_webcam")
                 else:
                     custom_filter_file = st.file_uploader("Upload Custom Filter Image", type=['jpg', 'jpeg', 'png'], key="custom_filter_webcam")
                     if custom_filter_file is not None:
@@ -191,7 +197,7 @@ with detection_tab[0]:
             self.in_progress = False
             # Privacy filter
             self.apply_mosaic = apply_mosaic_webcam
-            self.mosaic_level = mosaic_level_webcam if apply_mosaic_webcam else 10
+            self.mosaic_level = st.session_state.get("mosaic_level_webcam", 18)
             self.custom_filter = st.session_state.get("custom_filter_image", None)
             self.filter_type = st.session_state.get("filter_type_webcam", "Mosaic")
         
@@ -270,7 +276,7 @@ with detection_tab[0]:
             self.show_confidence = show_confidence
             # Update privacy filter settings
             self.apply_mosaic = apply_mosaic_webcam
-            self.mosaic_level = mosaic_level_webcam if apply_mosaic_webcam else 10
+            self.mosaic_level = st.session_state.get("mosaic_level_webcam", 18)
             self.custom_filter = st.session_state.get("custom_filter_image", None)
             self.filter_type = st.session_state.get("filter_type_webcam", "Mosaic")
             
@@ -330,7 +336,7 @@ with detection_tab[1]:
                                  key="filter_type_img",
                                  index=0 if st.session_state.filter_type_img == "Mosaic" else 1)
             if filter_type == "Mosaic":
-                mosaic_level_img = st.slider("Mosaic Block Size", 5, 50, 18, 1, key="mosaic_level_img")
+                st.session_state.mosaic_level_img = st.slider("Mosaic Block Size", 5, 50, st.session_state.mosaic_level_img, 1, key="mosaic_level_img")
             else:
                 custom_filter_file = st.file_uploader("Upload Custom Filter Image", type=['jpg', 'jpeg', 'png'], key="custom_filter_img")
                 if custom_filter_file is not None:
@@ -377,7 +383,7 @@ with detection_tab[1]:
                 box_color_img, 
                 thickness_img,
                 apply_mosaic_img,
-                mosaic_level_img if apply_mosaic_img else 10,
+                st.session_state.mosaic_level_img if apply_mosaic_img else 10,
                 st.session_state.custom_filter_image if apply_mosaic_img else None
             )
             
@@ -415,7 +421,7 @@ with detection_tab[2]:
                                      key="filter_type_video",
                                      index=0 if st.session_state.filter_type_video == "Mosaic" else 1)
                 if filter_type == "Mosaic":
-                    mosaic_level_video = st.slider("Mosaic Block Size", 5, 50, 18, 1, key="mosaic_level_video")
+                    st.session_state.mosaic_level_video = st.slider("Mosaic Block Size", 5, 50, st.session_state.mosaic_level_video, 1, key="mosaic_level_video")
                 else:
                     custom_filter_file = st.file_uploader("Upload Custom Filter Image", type=['jpg', 'jpeg', 'png'], key="custom_filter_video")
                     if custom_filter_file is not None:
@@ -486,7 +492,7 @@ with detection_tab[2]:
                 box_color_video, 
                 thickness_video,
                 apply_mosaic_video,
-                mosaic_level_video if apply_mosaic_video else 10,
+                st.session_state.mosaic_level_video if apply_mosaic_video else 10,
                 st.session_state.custom_filter_image if apply_mosaic_video else None
             )
             out.write(processed_frame)
