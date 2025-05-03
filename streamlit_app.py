@@ -69,7 +69,7 @@ def detectFaceOpenCVDnn(net, frame):
     detections = net.forward()
     return detections
 
-def process_detections(frame, detections, conf_threshold=0.5, box_color=(0, 255, 0), thickness=2, apply_mosaic=True, mosaic_level=10, custom_filter=None):
+def process_detections(frame, detections, conf_threshold=0.5, box_color=(0, 255, 0), thickness=2, apply_mosaic=True, mosaic_level=10):
     frame_h, frame_w = frame.shape[:2]
     for i in range(detections.shape[2]):
         confidence = detections[0, 0, i, 2]
@@ -79,28 +79,27 @@ def process_detections(frame, detections, conf_threshold=0.5, box_color=(0, 255,
             x2 = int(detections[0, 0, i, 5] * frame_w)
             y2 = int(detections[0, 0, i, 6] * frame_h)
             
+            # Make boxes wider by expanding x coordinates
+            box_width = x2 - x1
+            width_padding = int(box_width * 0.15)  # 15% wider on each side
+            x1 = max(0, x1 - width_padding)
+            x2 = min(frame_w - 1, x2 + width_padding)
+            
             # Ensure coordinates are within frame boundaries
-            x1 = max(0, min(x1, frame_w - 1))
             y1 = max(0, min(y1, frame_h - 1))
-            x2 = max(0, min(x2, frame_w - 1))
             y2 = max(0, min(y2, frame_h - 1))
             
             # Apply privacy filter if requested
             if apply_mosaic and x2 > x1 and y2 > y1:
                 face_roi = frame[y1:y2, x1:x2].copy()
-                if custom_filter is not None:
-                    # Resize custom filter to match face region
-                    filter_resized = cv2.resize(custom_filter, (x2 - x1, y2 - y1))
-                    frame[y1:y2, x1:x2] = filter_resized
-                else:
-                    # Apply pixelation effect (mosaic blur)
-                    h, w = face_roi.shape[:2]
-                    # Reduce size to create pixelation effect
-                    temp = cv2.resize(face_roi, (max(1, w // mosaic_level), max(1, h // mosaic_level)), 
-                                     interpolation=cv2.INTER_LINEAR)
-                    # Resize back to original size with nearest neighbor to maintain blocks
-                    pixelated = cv2.resize(temp, (w, h), interpolation=cv2.INTER_NEAREST)
-                    frame[y1:y2, x1:x2] = pixelated
+                # Apply pixelation effect (mosaic blur)
+                h, w = face_roi.shape[:2]
+                # Reduce size to create pixelation effect
+                temp = cv2.resize(face_roi, (max(1, w // mosaic_level), max(1, h // mosaic_level)), 
+                                 interpolation=cv2.INTER_LINEAR)
+                # Resize back to original size with nearest neighbor to maintain blocks
+                pixelated = cv2.resize(temp, (w, h), interpolation=cv2.INTER_NEAREST)
+                frame[y1:y2, x1:x2] = pixelated
                 
             cv2.rectangle(frame, (x1, y1), (x2, y2), box_color, thickness, cv2.LINE_8)
     return frame
@@ -123,11 +122,11 @@ if 'rotation_angle_image' not in st.session_state:
 if 'rotation_angle_video' not in st.session_state:
     st.session_state.rotation_angle_video = None
 if 'mosaic_level_webcam' not in st.session_state:
-    st.session_state.mosaic_level_webcam = 14
+    st.session_state.mosaic_level_webcam = 18
 if 'mosaic_level_img' not in st.session_state:
-    st.session_state.mosaic_level_img = 25
+    st.session_state.mosaic_level_img = 18
 if 'mosaic_level_video' not in st.session_state:
-    st.session_state.mosaic_level_video = 16
+    st.session_state.mosaic_level_video = 18
 
 # ---------------------
 # Main Content Area with Tabs
@@ -202,10 +201,14 @@ with detection_tab[0]:
                     x2 = int(detections[0, 0, i, 5] * img_w)
                     y2 = int(detections[0, 0, i, 6] * img_h)
                     
+                    # Make boxes wider by expanding x coordinates
+                    box_width = x2 - x1
+                    width_padding = int(box_width * 0.15)  # 15% wider on each side
+                    x1 = max(0, x1 - width_padding)
+                    x2 = min(img_w - 1, x2 + width_padding)
+                    
                     # Ensure coordinates are within frame boundaries
-                    x1 = max(0, min(x1, img_w - 1))
                     y1 = max(0, min(y1, img_h - 1))
-                    x2 = max(0, min(x2, img_w - 1))
                     y2 = max(0, min(y2, img_h - 1))
                     
                     # Store detected face
@@ -348,8 +351,7 @@ with detection_tab[1]:
                 box_color_img, 
                 thickness_img,
                 apply_mosaic_img,
-                mosaic_level_img if apply_mosaic_img else 10,
-                None
+                mosaic_level_img if apply_mosaic_img else 10
             )
             
             display_col2.image(out_image, channels='BGR', caption="Output Image")
@@ -448,8 +450,7 @@ with detection_tab[2]:
                 box_color_video, 
                 thickness_video,
                 apply_mosaic_video,
-                mosaic_level_video if apply_mosaic_video else 10,
-                None
+                mosaic_level_video if apply_mosaic_video else 10
             )
             out.write(processed_frame)
             stframe.image(processed_frame, channels="BGR")
