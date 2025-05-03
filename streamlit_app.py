@@ -123,11 +123,11 @@ if 'rotation_angle_image' not in st.session_state:
 if 'rotation_angle_video' not in st.session_state:
     st.session_state.rotation_angle_video = None
 if 'mosaic_level_webcam' not in st.session_state:
-    st.session_state.mosaic_level_webcam = 18
+    st.session_state.mosaic_level_webcam = 14
 if 'mosaic_level_img' not in st.session_state:
-    st.session_state.mosaic_level_img = 18
+    st.session_state.mosaic_level_img = 25
 if 'mosaic_level_video' not in st.session_state:
-    st.session_state.mosaic_level_video = 18
+    st.session_state.mosaic_level_video = 16
 
 # ---------------------
 # Main Content Area with Tabs
