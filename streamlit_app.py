@@ -124,6 +124,12 @@ if 'rotation_angle_video' not in st.session_state:
     st.session_state.rotation_angle_video = None
 if 'custom_filter_image' not in st.session_state:
     st.session_state.custom_filter_image = None
+if 'filter_type_webcam' not in st.session_state:
+    st.session_state.filter_type_webcam = "Mosaic"
+if 'filter_type_img' not in st.session_state:
+    st.session_state.filter_type_img = "Mosaic"
+if 'filter_type_video' not in st.session_state:
+    st.session_state.filter_type_video = "Mosaic"
 
 # ---------------------
 # Main Content Area with Tabs
@@ -151,7 +157,9 @@ with detection_tab[0]:
             st.subheader("Privacy Filter Options")
             apply_mosaic_webcam = st.checkbox("Apply Privacy Filter", True, key="apply_mosaic_webcam")
             if apply_mosaic_webcam:
-                filter_type = st.radio("Filter Type", ["Mosaic", "Custom Image"], key="filter_type_webcam")
+                filter_type = st.radio("Filter Type", ["Mosaic", "Custom Image"], 
+                                     key="filter_type_webcam",
+                                     index=0 if st.session_state.filter_type_webcam == "Mosaic" else 1)
                 if filter_type == "Mosaic":
                     mosaic_level_webcam = st.slider("Mosaic Block Size", 5, 50, 18, 1, key="mosaic_level_webcam")
                 else:
@@ -184,7 +192,8 @@ with detection_tab[0]:
             # Privacy filter
             self.apply_mosaic = apply_mosaic_webcam
             self.mosaic_level = mosaic_level_webcam if apply_mosaic_webcam else 10
-            self.custom_filter = st.session_state.custom_filter_image
+            self.custom_filter = st.session_state.get("custom_filter_image", None)
+            self.filter_type = st.session_state.get("filter_type_webcam", "Mosaic")
         
         def _detect_faces(self, frame: av.VideoFrame) -> np.ndarray:
             img = frame.to_ndarray(format="bgr24")
@@ -218,7 +227,7 @@ with detection_tab[0]:
                     # Apply privacy filter if requested
                     if self.apply_mosaic and x2 > x1 and y2 > y1:
                         face_roi = img[y1:y2, x1:x2].copy()
-                        if self.custom_filter is not None:
+                        if self.filter_type == "Custom Image" and self.custom_filter is not None:
                             # Resize custom filter to match face region
                             filter_resized = cv2.resize(self.custom_filter, (x2 - x1, y2 - y1))
                             img[y1:y2, x1:x2] = filter_resized
@@ -262,7 +271,8 @@ with detection_tab[0]:
             # Update privacy filter settings
             self.apply_mosaic = apply_mosaic_webcam
             self.mosaic_level = mosaic_level_webcam if apply_mosaic_webcam else 10
-            self.custom_filter = st.session_state.custom_filter_image
+            self.custom_filter = st.session_state.get("custom_filter_image", None)
+            self.filter_type = st.session_state.get("filter_type_webcam", "Mosaic")
             
             # Process the frame
             img = self._detect_faces(frame)
@@ -316,7 +326,9 @@ with detection_tab[1]:
         st.subheader("Privacy Filter Options")
         apply_mosaic_img = st.checkbox("Apply Privacy Filter", True, key="apply_mosaic_img")
         if apply_mosaic_img:
-            filter_type = st.radio("Filter Type", ["Mosaic", "Custom Image"], key="filter_type_img")
+            filter_type = st.radio("Filter Type", ["Mosaic", "Custom Image"], 
+                                 key="filter_type_img",
+                                 index=0 if st.session_state.filter_type_img == "Mosaic" else 1)
             if filter_type == "Mosaic":
                 mosaic_level_img = st.slider("Mosaic Block Size", 5, 50, 18, 1, key="mosaic_level_img")
             else:
@@ -399,7 +411,9 @@ with detection_tab[2]:
             st.subheader("Privacy Filter Options")
             apply_mosaic_video = st.checkbox("Apply Privacy Filter", True, key="apply_mosaic_video")
             if apply_mosaic_video:
-                filter_type = st.radio("Filter Type", ["Mosaic", "Custom Image"], key="filter_type_video")
+                filter_type = st.radio("Filter Type", ["Mosaic", "Custom Image"], 
+                                     key="filter_type_video",
+                                     index=0 if st.session_state.filter_type_video == "Mosaic" else 1)
                 if filter_type == "Mosaic":
                     mosaic_level_video = st.slider("Mosaic Block Size", 5, 50, 18, 1, key="mosaic_level_video")
                 else:
