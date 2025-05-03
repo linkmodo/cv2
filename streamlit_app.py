@@ -122,14 +122,6 @@ if 'rotation_angle_image' not in st.session_state:
     st.session_state.rotation_angle_image = None
 if 'rotation_angle_video' not in st.session_state:
     st.session_state.rotation_angle_video = None
-if 'custom_filter_image' not in st.session_state:
-    st.session_state.custom_filter_image = None
-if 'filter_type_webcam' not in st.session_state:
-    st.session_state.filter_type_webcam = "Mosaic"
-if 'filter_type_img' not in st.session_state:
-    st.session_state.filter_type_img = "Mosaic"
-if 'filter_type_video' not in st.session_state:
-    st.session_state.filter_type_video = "Mosaic"
 if 'mosaic_level_webcam' not in st.session_state:
     st.session_state.mosaic_level_webcam = 18
 if 'mosaic_level_img' not in st.session_state:
@@ -163,16 +155,7 @@ with detection_tab[0]:
             st.subheader("Privacy Filter Options")
             apply_mosaic_webcam = st.checkbox("Apply Privacy Filter", True, key="apply_mosaic_webcam")
             if apply_mosaic_webcam:
-                filter_type = st.radio("Filter Type", ["Mosaic", "Custom Image"], 
-                                     key="filter_type_webcam",
-                                     index=0 if st.session_state.filter_type_webcam == "Mosaic" else 1)
-                if filter_type == "Mosaic":
-                    mosaic_level_webcam = st.slider("Mosaic Block Size", 5, 50, st.session_state.mosaic_level_webcam, 1, key="mosaic_level_webcam")
-                else:
-                    custom_filter_file = st.file_uploader("Upload Custom Filter Image", type=['jpg', 'jpeg', 'png'], key="custom_filter_webcam")
-                    if custom_filter_file is not None:
-                        custom_filter_bytes = np.asarray(bytearray(custom_filter_file.read()), dtype=np.uint8)
-                        st.session_state.custom_filter_image = cv2.imdecode(custom_filter_bytes, cv2.IMREAD_COLOR)
+                mosaic_level_webcam = st.slider("Mosaic Block Size", 5, 50, st.session_state.mosaic_level_webcam, 1, key="mosaic_level_webcam")
     
     # Convert hex to BGR tuple
     box_color_webcam = tuple(int(box_color_webcam_hex[i:i+2], 16) for i in (1, 3, 5))
@@ -198,8 +181,6 @@ with detection_tab[0]:
             # Privacy filter
             self.apply_mosaic = apply_mosaic_webcam
             self.mosaic_level = mosaic_level_webcam if apply_mosaic_webcam else 18
-            self.custom_filter = st.session_state.get("custom_filter_image", None)
-            self.filter_type = st.session_state.get("filter_type_webcam", "Mosaic")
         
         def _detect_faces(self, frame: av.VideoFrame) -> np.ndarray:
             img = frame.to_ndarray(format="bgr24")
@@ -233,19 +214,14 @@ with detection_tab[0]:
                     # Apply privacy filter if requested
                     if self.apply_mosaic and x2 > x1 and y2 > y1:
                         face_roi = img[y1:y2, x1:x2].copy()
-                        if self.filter_type == "Custom Image" and self.custom_filter is not None:
-                            # Resize custom filter to match face region
-                            filter_resized = cv2.resize(self.custom_filter, (x2 - x1, y2 - y1))
-                            img[y1:y2, x1:x2] = filter_resized
-                        else:
-                            # Apply pixelation effect (mosaic blur)
-                            h, w = face_roi.shape[:2]
-                            # Reduce size to create pixelation effect
-                            temp = cv2.resize(face_roi, (max(1, w // self.mosaic_level), max(1, h // self.mosaic_level)), 
-                                             interpolation=cv2.INTER_LINEAR)
-                            # Resize back to original size with nearest neighbor to maintain blocks
-                            pixelated = cv2.resize(temp, (w, h), interpolation=cv2.INTER_NEAREST)
-                            img[y1:y2, x1:x2] = pixelated
+                        # Apply pixelation effect (mosaic blur)
+                        h, w = face_roi.shape[:2]
+                        # Reduce size to create pixelation effect
+                        temp = cv2.resize(face_roi, (max(1, w // self.mosaic_level), max(1, h // self.mosaic_level)), 
+                                         interpolation=cv2.INTER_LINEAR)
+                        # Resize back to original size with nearest neighbor to maintain blocks
+                        pixelated = cv2.resize(temp, (w, h), interpolation=cv2.INTER_NEAREST)
+                        img[y1:y2, x1:x2] = pixelated
                     
                     # Draw rectangle
                     cv2.rectangle(img, (x1, y1), (x2, y2), self.box_color, self.thickness, cv2.LINE_8)
@@ -277,8 +253,6 @@ with detection_tab[0]:
             # Update privacy filter settings
             self.apply_mosaic = apply_mosaic_webcam
             self.mosaic_level = mosaic_level_webcam if apply_mosaic_webcam else 18
-            self.custom_filter = st.session_state.get("custom_filter_image", None)
-            self.filter_type = st.session_state.get("filter_type_webcam", "Mosaic")
             
             # Process the frame
             img = self._detect_faces(frame)
@@ -332,16 +306,7 @@ with detection_tab[1]:
         st.subheader("Privacy Filter Options")
         apply_mosaic_img = st.checkbox("Apply Privacy Filter", True, key="apply_mosaic_img")
         if apply_mosaic_img:
-            filter_type = st.radio("Filter Type", ["Mosaic", "Custom Image"], 
-                                 key="filter_type_img",
-                                 index=0 if st.session_state.filter_type_img == "Mosaic" else 1)
-            if filter_type == "Mosaic":
-                mosaic_level_img = st.slider("Mosaic Block Size", 5, 50, st.session_state.mosaic_level_img, 1, key="mosaic_level_img")
-            else:
-                custom_filter_file = st.file_uploader("Upload Custom Filter Image", type=['jpg', 'jpeg', 'png'], key="custom_filter_img")
-                if custom_filter_file is not None:
-                    custom_filter_bytes = np.asarray(bytearray(custom_filter_file.read()), dtype=np.uint8)
-                    st.session_state.custom_filter_image = cv2.imdecode(custom_filter_bytes, cv2.IMREAD_COLOR)
+            mosaic_level_img = st.slider("Mosaic Block Size", 5, 50, st.session_state.mosaic_level_img, 1, key="mosaic_level_img")
         
         # Image rotation controls
         st.subheader("Rotation Options")
@@ -384,7 +349,7 @@ with detection_tab[1]:
                 thickness_img,
                 apply_mosaic_img,
                 mosaic_level_img if apply_mosaic_img else 10,
-                st.session_state.custom_filter_image if apply_mosaic_img else None
+                None
             )
             
             display_col2.image(out_image, channels='BGR', caption="Output Image")
@@ -417,16 +382,7 @@ with detection_tab[2]:
             st.subheader("Privacy Filter Options")
             apply_mosaic_video = st.checkbox("Apply Privacy Filter", True, key="apply_mosaic_video")
             if apply_mosaic_video:
-                filter_type = st.radio("Filter Type", ["Mosaic", "Custom Image"], 
-                                     key="filter_type_video",
-                                     index=0 if st.session_state.filter_type_video == "Mosaic" else 1)
-                if filter_type == "Mosaic":
-                    mosaic_level_video = st.slider("Mosaic Block Size", 5, 50, st.session_state.mosaic_level_video, 1, key="mosaic_level_video")
-                else:
-                    custom_filter_file = st.file_uploader("Upload Custom Filter Image", type=['jpg', 'jpeg', 'png'], key="custom_filter_video")
-                    if custom_filter_file is not None:
-                        custom_filter_bytes = np.asarray(bytearray(custom_filter_file.read()), dtype=np.uint8)
-                        st.session_state.custom_filter_image = cv2.imdecode(custom_filter_bytes, cv2.IMREAD_COLOR)
+                mosaic_level_video = st.slider("Mosaic Block Size", 5, 50, st.session_state.mosaic_level_video, 1, key="mosaic_level_video")
             
             # Video rotation controls in sub-columns
             st.subheader("Rotation Options")
@@ -493,7 +449,7 @@ with detection_tab[2]:
                 thickness_video,
                 apply_mosaic_video,
                 mosaic_level_video if apply_mosaic_video else 10,
-                st.session_state.custom_filter_image if apply_mosaic_video else None
+                None
             )
             out.write(processed_frame)
             stframe.image(processed_frame, channels="BGR")
